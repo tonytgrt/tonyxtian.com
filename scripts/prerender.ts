@@ -114,11 +114,9 @@ function write(page: Page) {
   writeFileSync(file, html);
 }
 
-// The share card for pages without a picture of their own: og.jpg if there is
-// one, the portrait otherwise.
-const card = existsSync(join(MEDIA, 'og.jpg'))
-  ? {url: asset('og.jpg'), alt: `${site.name}'s portfolio`, width: 1200, height: 630}
-  : {url: asset('head.jpg'), alt: site.name, width: 400, height: 400};
+// The share card for pages without a picture of their own: the opening over
+// the planet, captured from the site itself.
+const card = {url: asset('og.jpg'), alt: `${site.name}'s portfolio`, width: 1200, height: 630};
 
 const contactLine = `<p><a href="mailto:${site.email}">${site.email}</a> · ${links([
   {label: 'LinkedIn', href: site.linkedin},
@@ -150,7 +148,6 @@ function workPage(entry: WorkEntry): Page {
 }
 
 checkMedia(about.portrait);
-checkMedia(about.portraitPhone);
 for (const entry of shownWork) {
   if (entry.hero) {
     checkMedia(entry.hero);

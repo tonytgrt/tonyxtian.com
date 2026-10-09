@@ -99,12 +99,11 @@ function WorkStage({entry, index}: {entry: WorkEntry; index: number}) {
   );
 }
 
-// The first stop once landed: the name, with the portrait framed beside it
-// like the work's pictures, and how to get around.
+// The first stop once landed: the name, with the round portrait beside it,
+// and how to get around.
 function AboutStage() {
   const index = entryIndex('about');
   const portrait = about.portrait;
-  const phone = about.portraitPhone;
   return (
     <div className="plate plate--about">
       <div className="about">
@@ -112,27 +111,14 @@ function AboutStage() {
           <Kicker index={index} />
           <h2 className="plate__title">{site.name}</h2>
         </div>
-        <figure
+        <img
           className="portrait"
-          style={{'--ar': portrait.width / portrait.height, '--ar-phone': phone.width / phone.height} as CSSProperties}
-        >
-          <figcaption className="frame__bar">
-            <span>Viewport · Portrait</span>
-            <span>{portrait.width} × {portrait.height}</span>
-          </figcaption>
-          {/* Only the crop the screen shows is downloaded. */}
-          <picture>
-            <source media="(min-width: 760px)" srcSet={mediaUrl(portrait.src)} width={portrait.width} height={portrait.height} />
-            <img
-              className="portrait__media"
-              src={mediaUrl(phone.src)}
-              alt={portrait.alt}
-              width={phone.width}
-              height={phone.height}
-              decoding="async"
-            />
-          </picture>
-        </figure>
+          src={mediaUrl(portrait.src)}
+          alt={portrait.alt}
+          width={portrait.width}
+          height={portrait.height}
+          decoding="async"
+        />
         <div className="about__body">
           <p className="plate__tagline">{about.tagline}</p>
           <p className="plate__text"><Rich text={about.bio[0]} /></p>

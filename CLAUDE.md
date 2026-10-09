@@ -61,12 +61,16 @@ npm run preview    # serve dist/ on 5175
 - `src/ui/` holds the React components: `App`, `TopBar`, `IndexList`, `Stage`, `Timeline`, `BottomBar`, `CaseStudy`, `Intro`, `Sheet` and the shared `bits`.
 - `src/styles/app.css` is the only stylesheet: plain CSS, with tokens on `:root`.
 - `src/media/` holds images and video, imported through `src/media.ts`, so Vite gives them content-hashed names.
-  - Only files directly in `src/media/` ship. `src/media/originals/` keeps full-size sources, such as the uncropped headshot behind the two portrait crops, and `src/media/drafts/` keeps drafts' images; the build leaves both out.
+  - Only files directly in `src/media/` ship. `src/media/originals/` keeps full-size sources, such as the uncropped headshot behind `portrait.jpg`, and `src/media/drafts/` keeps drafts' images; the build leaves both out.
 - `scripts/prerender.ts` runs after `vite build`:
   - It writes `dist/<route>/index.html` for every route, with its own title, description, canonical URL and share card.
   - It adds a plain-HTML fallback of the content for crawlers and no-JS visitors.
   - It writes `sitemap.xml` and fails the build if a named image is missing.
-- `public/` is copied as is: the favicon and `robots.txt`.
+- `public/` is copied as is: `robots.txt`.
+- **The site's mark** is `src/media/mark.svg`, used as the tab icon and in the top bar left of the name.
+  - It's a T made of the night sea: the horizon is its bar, and the moon's path of light on the water, broken by ripples, is its stem.
+  - `favicon-32.png` and `apple-touch-icon.png` (full bleed, since iOS rounds it) are rendered from it. Re-render them if it changes.
+  - `index.html` links all three from `src/media/`, so Vite hashes them, and the CDN can never serve a stale icon.
 
 ## Landing and finale
 
@@ -93,8 +97,7 @@ npm run preview    # serve dist/ on 5175
 
 All text lives in typed files:
 - `src/content/site.ts` holds names, links, About (bio, skills and the portrait), Contact and the pass names.
-  - The About stage is headed by the name, with the portrait framed beside it like the work's pictures.
-  - It uses two crops of the headshot through a `<picture>`, so each screen downloads only its own: 4:3 on desktop (`portrait-wide.jpg`, `about.portrait`), and a 4:5 thumbnail beside the name on phones (`portrait.jpg`, `about.portraitPhone`).
+  - The About stage is headed by the name, with the portrait beside it: round, with no frame, on desktop and as a small circle beside the name on phones. It is one square crop of the headshot (`portrait.jpg`, `about.portrait`).
 - `src/content/entries.ts` holds the work, plus the ordered list of stops.
 
 Draw content from the resumes in `/home/ubuntu/TonyTianResume`. `resume_cg.tex` is the one used for new grad applications.

@@ -29,18 +29,12 @@ export const passes: Pass[] = [
 
 export const about = {
   tagline: 'Graphics engineer working across GPU rendering, real-time graphics, and the tools and games built on them.',
-  // The headshot, cropped from the full-size original in src/media/originals/:
-  // 4:3 beside the text on wider screens, 4:5 as a small frame on phones.
+  // The headshot, shown round: a square crop of the full-size original in
+  // src/media/originals/, its whole height, centred on the face.
   portrait: {
-    src: 'portrait-wide.jpg',
-    width: 1200,
-    height: 900,
-    alt: 'Tony Yiding Tian on a city street at night, in a Penn Engineering T-shirt',
-  } satisfies Media,
-  portraitPhone: {
     src: 'portrait.jpg',
-    width: 800,
-    height: 1000,
+    width: 1600,
+    height: 1600,
     alt: 'Tony Yiding Tian on a city street at night, in a Penn Engineering T-shirt',
   } satisfies Media,
   bio: [

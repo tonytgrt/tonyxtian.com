@@ -32,7 +32,7 @@ export function TopBar() {
     <header className="topbar">
       {/* Home is the intro: back up to space (or About, without WebGL). */}
       <button type="button" className="topbar__home" onClick={() => select(INTRO)}>
-        <img className="topbar__avatar" src={mediaUrl('head.jpg')} alt="" width="28" height="28" />
+        <img className="topbar__mark" src={mediaUrl('mark.svg')} alt="" width="28" height="28" />
         <span className="topbar__name">{site.name}</span>
       </button>
       <span className="topbar__where" aria-hidden="true">{where}</span>

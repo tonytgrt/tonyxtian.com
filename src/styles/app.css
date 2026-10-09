@@ -524,13 +524,11 @@ kbd {
   background: var(--hover);
 }
 
-.topbar__avatar {
+/* The site's mark, the same as its tab icon (src/media/mark.svg). */
+.topbar__mark {
   display: block;
   width: 28px;
   height: 28px;
-  border: 1px solid var(--line-strong);
-  border-radius: 50%;
-  object-fit: cover;
 }
 
 .topbar__name {
@@ -1187,24 +1185,19 @@ kbd {
   grid-area: body;
 }
 
+/* The portrait is round, with only a fine ring to hold its edge against the
+   sea. */
 .portrait {
   grid-area: portrait;
   align-self: center;
-  width: clamp(240px, 26vw, 440px);
-  margin: 0;
-  overflow: hidden;
-  border: 1px solid var(--line-strong);
-  border-radius: 10px;
-  background: var(--frame-bg);
-  box-shadow: 0 30px 70px -24px var(--shadow);
-}
-
-.portrait__media {
   display: block;
-  width: 100%;
+  width: clamp(200px, 22vw, 340px);
   height: auto;
-  aspect-ratio: var(--ar);
+  aspect-ratio: 1;
+  border-radius: 50%;
   object-fit: cover;
+  background: var(--frame-media);
+  box-shadow: 0 0 0 1px var(--line-strong), 0 30px 70px -24px var(--shadow);
 }
 
 /* Contact is the night finale: the camera looks up to the horizon as night
@@ -2072,16 +2065,7 @@ kbd {
 
   .portrait {
     width: 84px;
-    border-radius: 8px;
-    box-shadow: none;
-  }
-
-  .portrait__media {
-    aspect-ratio: var(--ar-phone);
-  }
-
-  .portrait .frame__bar {
-    display: none;
+    box-shadow: 0 0 0 1px var(--line-strong);
   }
 
   .plate--about .plate__title {

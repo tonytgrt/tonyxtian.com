@@ -1,8 +1,11 @@
-// The portfolio hero's background. This is a copy of the 566-hw1 fireball
-// project, reworked to live behind the page: it draws into the hero's canvas
-// rather than a full-window one, and has none of the standalone project's
-// on-screen tooling. The fireball is shrunk down to a comet that circles the
-// mouse cursor.
+// The site's WebGL world, drawn into the canvas fixed behind everything: the
+// landing from space, the ocean the site sits on, and the night it ends under.
+// It began as the 566-hw1 fireball project, and the fireball lives on as a
+// comet that circles the mouse cursor while the camera is still in space.
+//
+// The renderer knows nothing about the page. The app steers it through
+// `targets`, and every frame eases the camera toward them, so React never has
+// to render per frame.
 import {mat4, vec3} from 'gl-matrix';
 import Icosphere from './geometry/Icosphere';
 import Square from './geometry/Square';
@@ -27,8 +30,8 @@ const MAX_PIXEL_RATIO = 1.5;
 // Once the landing is over, the ocean behind the content is drawn at less than
 // one pixel per CSS pixel, whatever the screen's density. It is on screen for
 // as long as the visitor reads, and it is soft enough to lose nothing by it.
-// The end of the page goes back to full resolution once the camera starts to
-// look up, for the horizon, the stars and the face of the moon.
+// The finale goes back to full resolution once the camera starts to look up,
+// for the horizon, the stars and the face of the moon.
 const OCEAN_PIXEL_RATIO = 0.75;
 
 // How fast the planet turns and its clouds drift, as seen from where the
@@ -37,10 +40,26 @@ const OCEAN_PIXEL_RATIO = 0.75;
 const SPIN_RATE = 0.012;
 const CLOUD_DRIFT_RATE = 0.02;
 
-// How quickly the landing catches up with the scroll position, per second.
-// A mouse wheel scrolls in steps; following them this way turns each one into
-// a short glide instead of a jump.
-const SCROLL_SMOOTHING = 12;
+// How quickly the landing catches up with its target, per second. The wheel
+// moves the target in steps; following them this way turns each one into a
+// short glide instead of a jump.
+const DESCENT_SMOOTHING = 12;
+
+// The camera's flight over the sea between entries is a critically damped
+// spring: it eases out of rest and settles without overshooting, in about a
+// second at this stiffness.
+const TRAVEL_STIFFNESS = 4.5;
+
+// The finale moves at a steady pace in stages per second: night falls over the
+// first stage, then the camera looks up over the second. Each stage eases in
+// and out, so they read as two beats rather than one long swing.
+const FINALE_RATE = 0.7;
+
+// How far the landing must have played before it counts as over.
+const LANDED_AT = 0.985;
+
+// How often, in seconds, the measured frame time is reported to the page.
+const STATS_INTERVAL = 0.25;
 
 // Radius of the comet's head in CSS pixels. Its glow thins out toward the edge,
 // so the bright part of the head reads a little smaller than this.
@@ -89,6 +108,30 @@ const params: FireballParams & BackgroundParams & {tesselations: number} = {
   atmosphere: 0.028,    // thickness of the atmospheric halo above the limb
 };
 
+// Wave evaluations per ocean pixel, read from the shader so the HUD can't drift
+// from what is actually drawn.
+const WAVES = Number(/WAVE_ITERATIONS\s*=\s*(\d+)/.exec(backgroundFragSource)?.[1] ?? 0);
+
+export interface EngineStats {
+  frameMs: number;  // mean time between frames over the last report
+  ratio: number;    // drawing-buffer pixels per CSS pixel
+  waves: number;    // wave evaluations per ocean pixel
+}
+
+export interface Engine {
+  // Where the app wants the camera. The frame loop eases toward these; only
+  // the first frame takes them as they are, so a page opened mid-site starts
+  // there instead of flying in.
+  targets: {
+    descent: number;  // the landing: 0 in space, 1 down on the ocean (see Descent.ts)
+    finale: number;   // 0 by day, 1 once night has fallen, 2 looking up at the horizon
+    travel: number;   // how far over the sea the camera has flown, in screens
+  };
+  readonly descent: number;               // the landing as drawn this frame
+  onLanded: (() => void) | null;          // once each time the landing completes
+  onStats: ((stats: EngineStats) => void) | null;
+}
+
 // Everything only the flame needs, created only when it is shown.
 interface Fireball {
   lambert: ShaderProgram;
@@ -107,33 +150,37 @@ function createFireball(gl: WebGL2RenderingContext): Fireball {
   return {lambert, icosphere};
 }
 
-function main() {
-  const canvas = <HTMLCanvasElement> document.getElementById('backdrop-canvas');
-  if (!canvas) {
-    return;
-  }
+// Starts drawing into `canvas` and returns the handle that steers it, or null
+// if there is no WebGL 2 or the shaders won't build, in which case the page
+// keeps its plain CSS background.
+export function createEngine(canvas: HTMLCanvasElement): Engine | null {
   const gl = canvas.getContext('webgl2');
-  // Without WebGL 2 the page just keeps its plain CSS backgrounds.
   if (!gl) {
-    return;
+    return null;
   }
-  // `setGL` is a function imported above which sets the value of `gl` in the `globals.ts` module.
-  // Later, we can import `gl` from `globals.ts` to access it
+  // `setGL` sets the `gl` the rendering classes import from `globals.ts`.
   setGL(gl);
 
-  const square = new Square(vec3.fromValues(0, 0, 0));
-  square.create();
+  let square: Square;
+  let renderer: OpenGLRenderer;
+  let background: ShaderProgram;
+  let fireball: Fireball | null;
+  try {
+    square = new Square(vec3.fromValues(0, 0, 0));
+    square.create();
+    renderer = new OpenGLRenderer(canvas);
+    // The background covers every pixel, so this only shows if it fails to draw.
+    renderer.setClearColor(0.004, 0.006, 0.014, 1);
+    background = new ShaderProgram([
+      new Shader(gl.VERTEX_SHADER, backgroundVertSource),
+      new Shader(gl.FRAGMENT_SHADER, backgroundFragSource),
+    ]);
+    fireball = SHOW_FIREBALL ? createFireball(gl) : null;
+  } catch (error) {
+    console.error('The WebGL backdrop failed to start:', error);
+    return null;
+  }
 
-  const renderer = new OpenGLRenderer(canvas);
-  // The background covers every pixel, so this only shows if it fails to draw.
-  renderer.setClearColor(0.004, 0.006, 0.014, 1);
-
-  const background = new ShaderProgram([
-    new Shader(gl.VERTEX_SHADER, backgroundVertSource),
-    new Shader(gl.FRAGMENT_SHADER, backgroundFragSource),
-  ]);
-
-  const fireball = SHOW_FIREBALL ? createFireball(gl) : null;
   const comet = new Comet();
   const shape = {...params};
   const viewProj = mat4.create();
@@ -166,80 +213,93 @@ function main() {
     renderer.setSize(width, height);
   }
 
-  // The hero is a tall track of scroll the landing plays out over; the canvas
-  // itself is fixed behind the whole page.
-  const hero = document.querySelector<HTMLElement>('.home-hero');
-  // And the end of the page is another, below the content: night falls as
-  // the last of it scrolls away, and once it has gone, scrolling on looks up
-  // from the sea to the horizon.
-  const finale = document.querySelector<HTMLElement>('.finale');
   const view: BackgroundView = {
     pan: 0, zoom: 1, cloudZoom: 1, spin: 0, cloudDrift: 0, inside: 0, scroll: 0, night: 0, finale: 0,
   };
-  let progress = -1;
-  let nightProgress = -1;
-  let finaleProgress = -1;
+  let progress = 0;
+  let stage = 0;
+  let travel = 0;
+  let travelSpeed = 0;
+  let first = true;
+  let landed = false;
+  let shownDescent = -1;
 
+  const engine: Engine = {
+    targets: {descent: 0, finale: 0, travel: 0},
+    get descent() {
+      return progress;
+    },
+    onLanded: null,
+    onStats: null,
+  };
+
+  const root = document.documentElement;
   const startTime = performance.now();
   let lastTime = 0;
-  let drawn = false;
+  let statFrames = 0;
+  let statTime = 0;
 
-  // This function will be called every frame
-  function tick() {
-    // Seconds since the program started, passed to the shaders so their
+  const tick = () => {
+    // Seconds since the engine started, passed to the shaders so their
     // displacement and color animate over time.
     const time = (performance.now() - startTime) * 0.001;
+    const frameTime = time - lastTime;
     // Capped, so a frame after a hidden tab comes back doesn't fling the comet.
-    const dt = Math.min(time - lastTime, 0.1);
+    const dt = Math.min(frameTime, 0.1);
     lastTime = time;
 
-    // 0 at the top of the page, 1 where the content takes over: the distance
-    // scrolled through is the hero's height less the screen's. The first frame
-    // starts where the page already is, so a reload halfway down doesn't
-    // replay the landing. Without a hero there is no landing, only the ocean.
-    const rect = canvas.getBoundingClientRect();
-    let target = 1;
-    if (hero) {
-      const heroRect = hero.getBoundingClientRect();
-      const travel = heroRect.height - rect.height;
-      target = travel > 0 ? Math.min(1, Math.max(0, -heroRect.top / travel)) : 0;
-    }
-    const follow = 1 - Math.exp(-dt * SCROLL_SMOOTHING);
-    progress = progress < 0 ? target : progress + (target - progress) * follow;
+    const targets = engine.targets;
+    const descentTarget = Math.min(1, Math.max(0, targets.descent));
+    const stageTarget = Math.min(2, Math.max(0, targets.finale));
+    if (first) {
+      progress = descentTarget;
+      stage = stageTarget;
+      travel = targets.travel;
+      first = false;
+    } else {
+      progress += (descentTarget - progress) * (1 - Math.exp(-dt * DESCENT_SMOOTHING));
 
-    // Night: 0 as the end of the content reaches the bottom of the screen, 1
-    // as it leaves the top, so the sky is all night before the camera looks
-    // up at it. Then the look up: 0 there, 1 at the very bottom of the page,
-    // measured against the visible height so that it gets there.
-    let nightTarget = 0;
-    let finaleTarget = 0;
-    if (finale) {
-      const finaleRect = finale.getBoundingClientRect();
-      const screen = window.innerHeight;
-      const travel = finaleRect.height - screen;
-      nightTarget = Math.min(1, Math.max(0, (screen - finaleRect.top) / screen));
-      finaleTarget = travel > 0 ? Math.min(1, Math.max(0, -finaleRect.top / travel)) : 0;
+      const stageStep = dt * FINALE_RATE;
+      stage = stageTarget > stage
+        ? Math.min(stageTarget, stage + stageStep)
+        : Math.max(stageTarget, stage - stageStep);
+
+      const decay = Math.exp(-dt * TRAVEL_STIFFNESS);
+      const offset = travel - targets.travel;
+      const pull = (travelSpeed + TRAVEL_STIFFNESS * offset) * dt;
+      travel = targets.travel + (offset + pull) * decay;
+      travelSpeed = (travelSpeed - TRAVEL_STIFFNESS * pull) * decay;
     }
-    nightProgress = nightProgress < 0
-      ? nightTarget
-      : nightProgress + (nightTarget - nightProgress) * follow;
-    finaleProgress = finaleProgress < 0
-      ? finaleTarget
-      : finaleProgress + (finaleTarget - finaleProgress) * follow;
+
+    // The page fades its own pieces in and out with the landing through this.
+    if (Math.abs(progress - shownDescent) > 0.0005 || (progress === descentTarget && progress !== shownDescent)) {
+      shownDescent = progress;
+      root.style.setProperty('--descent', progress.toFixed(4));
+    }
+
+    if (descentTarget >= 1 && progress > LANDED_AT) {
+      if (!landed) {
+        landed = true;
+        engine.onLanded?.();
+      }
+    } else if (descentTarget < 1) {
+      landed = false;
+    }
 
     const descent = descentView(progress);
     view.pan = descent.pan;
     view.zoom = descent.zoom;
     view.cloudZoom = descent.cloudZoom;
     view.inside = descent.inside;
-    view.scroll = window.scrollY / Math.max(1, rect.height);
-    view.night = ease(nightProgress);
-    view.finale = ease(finaleProgress);
+    view.scroll = travel;
+    view.night = ease(Math.min(1, stage));
+    view.finale = ease(Math.max(0, stage - 1));
     view.spin += dt * SPIN_RATE / descent.zoom;
     view.cloudDrift += dt * CLOUD_DRIFT_RATE / descent.cloudZoom;
 
     const fullRatio = Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
-    resize(descent.inside >= 1 && view.finale <= 0 ? OCEAN_PIXEL_RATIO : fullRatio);
+    const ratio = descent.inside >= 1 && view.finale <= 0 ? OCEAN_PIXEL_RATIO : fullRatio;
+    resize(ratio);
     gl.viewport(0, 0, canvas.width, canvas.height);
     renderer.clear();
 
@@ -253,10 +313,10 @@ function main() {
     background.setBackgroundView(view);
     background.draw(square);
 
+    const rect = canvas.getBoundingClientRect();
     if (fireball && hasPointer && descent.comet > 0 && rect.width >= 1 && rect.height >= 1) {
       // The cursor in the comet's coordinates: CSS pixels from the canvas's
-      // bottom-left corner, y up. Read fresh each frame, since scrolling moves
-      // the canvas under a mouse that hasn't moved.
+      // bottom-left corner, y up.
       const targetX = pointerX - rect.left;
       const targetY = rect.bottom - pointerY;
       if (appearedAt < 0) {
@@ -296,21 +356,28 @@ function main() {
       gl.disable(gl.BLEND);
     }
 
-    // With a frame drawn, the canvas can take over as the page's background:
-    // the stylesheet clears the sections' own backgrounds under this class.
-    // Not before, or they would clear onto a blank canvas for a frame.
-    if (!drawn) {
-      document.documentElement.classList.add('webgl');
-      drawn = true;
+    // With a frame drawn, the canvas can take over as the page's background.
+    if (!root.classList.contains('webgl')) {
+      root.classList.add('webgl');
     }
 
-    // Tell the browser to call `tick` again whenever it renders a new frame.
-    // The canvas is always on screen now, so this runs for as long as the page
-    // is open, and the browser pauses it on its own in a background tab.
+    // The real time between frames, not the capped step, so a slow frame
+    // shows; but not the gap while the tab was hidden.
+    if (frameTime < 1) {
+      statFrames += 1;
+      statTime += frameTime;
+    }
+    if (statTime >= STATS_INTERVAL) {
+      engine.onStats?.({frameMs: statTime * 1000 / statFrames, ratio, waves: WAVES});
+      statFrames = 0;
+      statTime = 0;
+    }
+
+    // The canvas is always on screen, so this runs for as long as the page is
+    // open; the browser pauses it on its own in a background tab.
     requestAnimationFrame(tick);
-  }
+  };
 
   requestAnimationFrame(tick);
+  return engine;
 }
-
-main();

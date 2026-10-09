@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 PORTFOLIO_DIR="/home/ubuntu/portfolio"
 WEB_ROOT="/var/www/tonyxtian.com"
@@ -13,11 +14,14 @@ git pull origin main
 echo "📦 Installing dependencies..."
 npm install
 
-echo "🎨 Building CSS..."
+echo "🔨 Building the site..."
 npm run build
 
+# Only the build goes live: dist/ holds the pages (one folder per route), the
+# hashed assets and the sitemap. --delete clears out anything the build no
+# longer makes.
 echo "🚢 Deploying to web root..."
-sudo rsync -av --delete --exclude='.git' --exclude='node_modules' --exclude='.gitignore' $PORTFOLIO_DIR/ $WEB_ROOT/
+sudo rsync -av --delete $PORTFOLIO_DIR/dist/ $WEB_ROOT/
 
 echo "🔒 Setting permissions..."
 sudo chown -R www-data:www-data $WEB_ROOT

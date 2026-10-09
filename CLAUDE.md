@@ -4,124 +4,121 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a personal portfolio website for Tony Yiding Tian (Computer Graphics Engineer) built using the Dopefolio template. The site is a multi-page, static HTML/CSS/JavaScript portfolio showcasing graphics projects, deployed to a custom Nginx server.
+Tony Yiding Tian's portfolio (graphics engineer, UPenn), deployed at
+tonyxtian.com. It is a single-page app built with Vite, React 19 and TypeScript
+(strict mode). A WebGL 2 renderer draws the world behind it.
 
-## Development Commands
+The layout is a GPU frame capture:
+- **Top bar.** It shows the renderer's live frame time, pixel ratio and wave count.
+- **Index.** The left panel is an event list of every stop, grouped into passes.
+- **Stage.** It shows one entry at a time over the ocean, with its counters.
+- **Bottom bar.** It holds a timeline from 2024 to 2026, "Replay descent" and the email address.
 
-### SASS Compilation
+Each scroll gesture, swipe or arrow key moves one entry. A case study opens
+in a pane docked on the right, full screen on phones, and it has its own
+address.
+
+## Commands
+
 ```bash
-# Watch and compile SASS files (use this during development)
-npm run compile:scss
-
-# Production build: compress CSS, build the hero background
-# (fireball/ -> js/fireball.js), then cache-bust every asset reference
-npm run build
+npm run dev        # dev server on http://localhost:5174 (5173 is taken: nginx
+                   # proxies /webgpu_renderer to a dev server there)
+npm run typecheck  # the app, then the Node-side files (vite.config.ts, scripts/, src/content/)
+npm run build      # typecheck, vite build, then tsx scripts/prerender.ts
+npm run preview    # serve dist/ on 5175
+./deploy.sh        # on the server: pull, npm install, build, rsync dist/ to /var/www/tonyxtian.com
 ```
 
-The `compile:scss` command watches `sass/main.scss` and outputs to `css/style.css`. Keep this running while editing styles.
+## Structure
 
-### Deployment
-```bash
-# Full deployment pipeline (git pull, build, sync to web root, restart nginx)
-./deploy.sh
-```
+- `src/main.tsx` boots the engine, the input handlers and React.
+- `src/engine/` holds the WebGL world, in plain TypeScript and GLSL (no React):
+  - `engine.ts` exports `createEngine(canvas)`. It returns `null` without WebGL 2, and the page then keeps its CSS gradient.
+    - The app steers the engine only through `engine.targets`, and the frame loop eases toward them:
+      - `descent` runs 0→1.
+      - `finale` runs 0→2: night falls, then the camera looks up.
+      - `travel` is how far the camera has flown over the sea.
+    - It also exposes `descent`, `onLanded` and `onStats`, and writes the `--descent` CSS variable every frame.
+  - `Descent.ts` is the landing timeline. `Comet.ts` is the comet that circles the cursor while in space.
+  - `shaders/background-frag.glsl` draws the planet, clouds, ocean, night sky and moon.
+    - The ocean is adapted from afl_ext's MIT-licensed "Very fast procedural ocean". Its copyright and license notice must stay in that file.
+  - `rendering/gl/` and `geometry/` hold the old CIS 566 base classes.
+- `src/store.ts` holds the small app state (`index`, `open`, `landing`, `sheet`, `direction`, `stats`), read with `useStore(selector)`.
+- `src/actions.ts` handles every change of state and is the only code that touches `engine.targets`:
+  - Selecting and stepping.
+  - Opening and closing a case study, with `pushState`.
+  - `popstate`.
+  - The descent: skip and replay.
+  - Boot: deep links and old `#about` / `#experience` / `#projects` anchors.
+- `src/input/` turns input into steps:
+  - `wheel.ts` gives one step per wheel or trackpad gesture.
+  - `bind.ts` handles wheel, keys and touch. During the descent, the wheel, keys and touch play the descent instead of stepping.
+  - Test changes to `wheel.ts` against real trackpad momentum and mouse notches.
+- `src/routing.ts`: `/` is home; `/about/` and `/<work id>/` open a case study.
+- `src/ui/` holds the React components: `App`, `TopBar`, `IndexList`, `Stage`, `Timeline`, `BottomBar`, `CaseStudy`, `Intro`, `Sheet` and the shared `bits`.
+- `src/styles/app.css` is the only stylesheet: plain CSS, with tokens on `:root`.
+- `src/media/` holds images and video, imported through `src/media.ts`, so Vite gives them content-hashed names.
+- `scripts/prerender.ts` runs after `vite build`:
+  - It writes `dist/<route>/index.html` for every route, with its own title, description, canonical URL and share card.
+  - It adds a plain-HTML fallback of the content for crawlers and no-JS visitors.
+  - It writes `sitemap.xml` and fails the build if a named image is missing.
+- `public/` is copied as is: the favicon and `robots.txt`.
 
-This script is configured for deployment to `/var/www/tonyxtian.com` on the production server.
+## Landing and finale
 
-## Project Structure
+- **Descent.** It plays only on a first visit: never on a deep link, never with `prefers-reduced-motion`, and not again once `localStorage['tonyxtian.landed']` is set.
+  - The wheel plays it over 2.4 screens of scrolling, and the panels fade in over its last stretch (`.app[data-landing='true']` in the CSS).
+  - When the engine reports landing, `input.hold()` swallows the rest of that scroll gesture.
+  - The descent stays dark the whole way, with no white-out.
+- **Contact.** It is the last stop. Selecting it sets `targets.finale = 2`: night falls, then the camera pitches up to the horizon under the moon. The copyright line sits at the bottom of that stop and is the site's only footer.
+- **Stage backgrounds.** Panels over the canvas are translucent glass and the stage itself is transparent, so the ocean stays visible.
 
-### Pages
-- `index.html` - Main homepage: hero (the landing), about, experience, projects, and the finale
-- `project-{1,2,3}.html` - Individual project case study pages (identical structure, different content)
+## Content
 
-### Styling Architecture
-SASS files are organized in `sass/` using a modular structure:
-- `abstracts/` - Variables (`_variables.scss` contains `$themeClrPrimary` for theme color), mixins, utilities
-- `base/` - Base styles and resets
-- `components/` - Reusable components (header, footer, skills, mouse-scroll)
-- `pages/` - Page-specific styles (home, project case studies)
-- `main.scss` - Main entry point that imports all partials
+All text lives in typed files:
+- `src/content/site.ts` holds names, links, the title card, About (bio and skills), Contact and the pass names.
+- `src/content/entries.ts` holds the work, plus the ordered list of stops.
 
-**Theme**: the site is dark, its palette taken from the ocean the home page lands on. All of it is in the `$themeClr*` variables in `sass/abstracts/_variables.scss`; use those rather than new hard-coded colours. The hamburger icons in `assets/svg/` carry their own stroke colour.
+Draw content from the resumes in `/home/ubuntu/TonyTianResume`. `resume_cg.tex` is the one used for new grad applications.
 
-### JavaScript
-`index.js` contains vanilla JavaScript for:
-- Mobile hamburger menu toggle functionality
-- Header logo click navigation
-- No frameworks or libraries used
+### Adding a project
+1. Add a `WorkEntry` to `work` in `src/content/entries.ts`. Put it in its pass, newest first within the pass:
+   - Production: Apple.
+   - Rendering & GPU.
+   - Animation, games & XR.
+   - Systems & embedded, which is hidden while it has no published entries.
+2. Fill in its fields:
+   - `id`: also the route.
+   - `metric`: the index column.
+   - `tagline`: one line.
+   - `dates`: as shown.
+   - `span`: first and last month, for the timeline.
+   - `stack`.
+   - `counters`: measured results, two or three. Use real numbers from the resume, never adjectives.
+   - `links`: the first one becomes the stage's second button.
+   - `blocks`: the case study, with `**bold**` allowed.
+3. Put the image in `src/media/`, resized to about 1600px wide (the originals are often 4–15 MB), and give its real `width`/`height` in `hero`.
+   - For a clip, add a `video` (WebM) alongside a poster JPEG.
+   - Work without a picture is set as type alone, like Apple.
+4. Set `draft: true` to keep an entry out of the site. Drafts' images go in `src/media/drafts/`, which the build doesn't ship.
+5. Don't mention the Metal Liquid Glass Renderer anywhere on the site.
 
-`fireball/` is the hero's WebGL background (a copy of the 566-hw1 fireball
-project, TypeScript + GLSL): a procedural planet with a comet circling the mouse
-cursor. Vite builds it into `js/fireball.js` (`npm run build:fireball`, or
-`npm run watch:fireball` while working on it).
+## Theme
 
-The canvas is fixed behind the whole home page (`.backdrop`). The hero is a
-tall scroll track in front of it; scrolling through it plays a landing: the
-camera pans to the planet, falls through the clouds as they thin away and
-comes down over the ocean, which stays as the background to all the content
-below. It stays dark the whole way: there is no white-out. The
-ocean is adapted from afl_ext's MIT-licensed "Very fast procedural ocean"
-shader; its copyright and license notice in `background-frag.glsl` must stay
-with it. The
-timeline is in `fireball/src/Descent.ts`, and the track's length
-(`$heroTravel`) and how far About overlaps its end (`$heroOverlap`) are in
-`sass/pages/_home.scss`. Sections over the canvas must stay transparent; the
-hero paints its space colour only until the `webgl` class is set, which
-`main.ts` does once the first frame is drawn. The header and the social links are hidden
-until the landing ends: `index.js` adds `landed` to the body.
+- **Palette.** The site is dark, its palette taken from the ocean. Colours are CSS custom properties on `:root` in `app.css`: `--bg`, `--glass`, `--fg`, `--muted`, `--dim`, `--accent`, `--primary`, and the pass colours `--sun`, `--accent` and `--teal`, set through `[data-pass]`. Use those rather than new hard-coded colours.
+- **Fonts.** Archivo is used with its width axis (`font-stretch`), and JetBrains Mono for the capture-tool labels and numbers.
 
-The home page has no footer beyond a copyright line. It ends in `.finale`,
-another tall track: night falls while the last content scrolls away (so the
-sky is fully night before any of it is in view), then scrolling on pitches
-the camera up from the sea to the horizon, and the copyright sits at its very
-bottom. Its length is `$finaleTravel` in
-`sass/pages/_home.scss`. The project pages keep the old `.main-footer`.
+## Contact
 
-### Cache busting
-The site sits behind Cloudflare, which caches CSS, JS and images for hours.
-Every local asset reference in the pages (and every `url()` in the CSS) carries
-`?v=<hash of the file>`, which `scripts/stamp-assets.mjs` rewrites as the last
-step of `npm run build`. Never edit these stamps by hand; add new references
-without one and the build fills it in.
+There is no contact form. Every "Contact" on the site is `mailto:tonytg@engineering.upenn.edu` (`site.email`).
 
-## Key Implementation Details
+## Deployment and caching
 
-### Adding New Projects
-Projects in `index.html` are in two groups, each headed by a `.projects__group-title`:
-"Rendering & GPU" first, then "Animation, Games & XR", newest first within each.
-Content is drawn from the resumes in `/home/ubuntu/TonyTianResume` (`resume_cg.tex`
-is the one used for new grad applications).
+- Nginx serves `/var/www/tonyxtian.com` with `try_files $uri $uri/ =404`, so `/matforge/` is `dist/matforge/index.html`.
+- `deploy.sh` syncs only `dist/` there, with `--delete`.
+- The site sits behind Cloudflare, which caches JS, CSS and images for hours and leaves the HTML uncached. Vite's content-hashed file names keep caching correct with no manual version stamps. Don't add `?v=` query strings.
+- The resume is hosted on GitHub at `https://raw.githubusercontent.com/tonytgrt/TonyTianResume/master/resume_cg.pdf` (`site.resume`).
 
-1. Add a `.projects__row` in the right group. Under the title, a
-   `.projects__row-content-meta` line gives tech, dates, and team size; then a
-   one-paragraph description and a short `<ul>` of highlights
-2. Put its buttons in `.projects__row-content-links`: the main link as
-   `btn--theme`, a second (usually the GitHub repo) as `btn--theme-inv`
-3. Add the image to `assets/jpeg/` resized to about 1600px wide (the originals
-   are often 4-15 MB). A project with no image yet can use the
-   `.projects__row-img-cont--card` title card in its place (see `_home.scss`)
-4. Don't mention the Metal Liquid Glass Renderer anywhere on the site
+## Testing
 
-### Image Assets
-- Profile/header images: `assets/jpeg/` or `assets/png/`
-- Icons: `assets/png/` (social media icons)
-- SVG: `assets/svg/` (hamburger menu icons)
-- Project mockups should be optimized and cropped to minimize file size
-
-### Contact
-There is no contact section or form. Every "Contact" link, in the header menus
-of all pages and the About section's button, is
-`mailto:tonytg@engineering.upenn.edu`.
-
-## Deployment Notes
-
-The site is configured for deployment to a custom server:
-- Web root: `/var/www/tonyxtian.com`
-- Web server: Nginx
-- The deployment script handles git pull, npm build, file sync, and server restart
-- Assets are served directly from the web root. `npm run build` does rewrite the
-  pages' `?v=` stamps, so commit the HTML it changes along with the assets
-
-## Resume Link
-
-The resume is hosted externally on GitHub at `https://raw.githubusercontent.com/tonytgrt/TonyTianResume/master/resume_cg.pdf`. Update this link in both desktop and mobile menu sections if the resume location changes.
+Headless Chromium can render the site with SwiftShader (`--use-angle=swiftshader --enable-unsafe-swiftshader`). It runs at roughly one frame a second there, so wait long enough for the finale. Input timings are unrealistic under it: test wheel gesture logic with WebGL off (`--disable-3d-apis`) or directly against `WheelSteps`.

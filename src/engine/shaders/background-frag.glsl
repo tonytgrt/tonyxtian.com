@@ -11,9 +11,9 @@ uniform vec2  u_Dimensions;  // Canvas size in pixels, used only for the aspect 
 uniform float u_Horizon;     // Screen height at which the limb crosses the centre line.
 uniform float u_Atmosphere;  // Thickness of the atmospheric halo, as a fraction of the radius.
 
-// The scroll-driven landing, set from Descent.ts. At the top of the page they
-// leave the scene exactly as the standalone project drew it: no pan, both zooms
-// 1, no fog, no fade.
+// The landing, set from Descent.ts. Before it starts they leave the scene
+// exactly as the standalone project drew it: no pan, both zooms 1, no fog, no
+// fade.
 uniform float u_Pan;         // 0 at rest, 1 once the camera looks straight at the planet's centre.
 uniform float u_Zoom;        // Magnification of the ground, about the middle of the screen.
 uniform float u_CloudZoom;   // Magnification of the cloud layer. It is nearer the camera, so it
@@ -22,8 +22,8 @@ uniform float u_CloudZoom;   // Magnification of the cloud layer. It is nearer t
 uniform float u_Spin;        // How far the planet has turned, in radians.
 uniform float u_CloudDrift;  // How far the clouds have drifted through their noise.
 uniform float u_Inside;      // 0 to 1: from the planet's own ocean to the close view of it.
-uniform float u_Scroll;      // How far the page has scrolled, in screen heights.
-uniform float u_Night;       // 0 to 1: night falling at the end of the page, as the last content leaves.
+uniform float u_Scroll;      // How far the camera has travelled between entries, in screens.
+uniform float u_Night;       // 0 to 1: night falling over the last stop, Contact.
 uniform float u_Finale;      // 0 to 1: then the camera looking up from the sea to the horizon.
 
 in vec2 fs_Pos;
@@ -268,10 +268,10 @@ vec3 landing(vec2 screen)
 
 // ---------------------------------------------------------------------------
 // The ocean: where the fall comes out below the clouds, and the backdrop to
-// the content page from then on. The camera breaks out of the cloud base
-// looking almost straight down, as it has all the way from space, and stays
-// that way, gliding on over the sea, and further as the page scrolls. At the
-// end of the page it looks up to the horizon as night falls.
+// the site from then on. The camera breaks out of the cloud base looking
+// almost straight down, as it has all the way from space, and stays that way,
+// gliding on over the sea, and further with each step between entries. At the
+// last stop, Contact, it looks up to the horizon as night falls.
 //
 // The wave model and the water's shading are adapted from afl_ext's "Very
 // fast procedural ocean" shader, under the MIT License:
@@ -309,7 +309,7 @@ const int   WAVE_ITERATIONS = 24;
 const float SEA_PITCH       = 1.40;  // how far below the horizon the camera looks, radians:
                                      // just short of straight down, so the top of the view
                                      // reaches a little way out, toward brighter sky
-const float SEA_SCROLL      = 3.0;   // how far the camera flies on per screen of scrolling
+const float SEA_SCROLL      = 3.0;   // how far the camera flies on per screen of travel
 const float SEA_DRIFT       = 0.05;  // how fast it glides on by itself
 const float SEA_RADIUS      = 4000.0; // the planet's, which curves the horizon: from the
                                       // finale's height it dips about 4 degrees below level

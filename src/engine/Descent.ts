@@ -1,9 +1,8 @@
-// The landing that plays as the visitor scrolls through the hero: the camera
+// The landing that plays as the visitor scrolls on a first visit: the camera
 // pans down to look straight at the planet, falls toward it, drops through the
-// clouds as they thin away, and comes down over the ocean the content page
-// sits on, still looking down at it.
-// `progress` runs from 0 at the top of the page to 1 where the hero hands over
-// to the content.
+// clouds as they thin away, and comes down over the ocean the site sits on,
+// still looking down at it.
+// `progress` runs from 0 out in space to 1 once landed.
 //
 //   0.00 - 0.40  pan down and a little right until the planet's centre is mid-screen
 //   0.30 - 0.85  fall: the ground zooms in, and the nearer clouds faster still,
@@ -11,9 +10,8 @@
 //   0.64 - 0.86  the close view of the sea fades up as the last clouds clear, and
 //                the camera drops toward it
 //
-// The sea is in view before the content's light text starts to rise over it
-// (see $heroOverlap), and the last stretch is the sea alone, so the smoothing
-// in main.ts has caught up by the time the content takes over.
+// The last stretch is the sea alone, so the smoothing in engine.ts has caught
+// up by the time the site's panels fade in over it.
 
 // Height of the cloud deck and the lowest the camera gets, both as fractions of
 // the altitude it starts from. Each layer's magnification is the starting

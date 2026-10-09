@@ -3,10 +3,10 @@ import Drawable from '../rendering/gl/Drawable';
 import {gl} from '../globals';
 
 class Icosphere extends Drawable {
-  buffer: ArrayBuffer;
-  indices: Uint32Array;
-  positions: Float32Array;
-  normals: Float32Array;
+  buffer!: ArrayBuffer;
+  indices!: Uint32Array;
+  positions!: Float32Array;
+  normals!: Float32Array;
   center: vec4;
 
   constructor(center: vec3, public radius: number, public subdivisions: number) {
@@ -111,7 +111,7 @@ class Icosphere extends Drawable {
           edgeMap.set(key, vertices.length);
           vertices.push(midpoint);
         }
-        return edgeMap.get(key);
+        return edgeMap.get(key)!;
       }
 
       for (let t = 0; t < triangles.length; ++t) {

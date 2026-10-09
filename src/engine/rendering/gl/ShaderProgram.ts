@@ -2,7 +2,7 @@ import {vec3, vec4, mat4} from 'gl-matrix';
 import Drawable from './Drawable';
 import {gl} from '../../globals';
 
-var activeProgram: WebGLProgram = null;
+let activeProgram: WebGLProgram | null = null;
 
 // The procedural background's shape parameters, read by background-frag.glsl.
 export interface BackgroundParams {
@@ -10,7 +10,8 @@ export interface BackgroundParams {
   atmosphere: number;   // u_Atmosphere
 }
 
-// Where the camera is in the scroll-driven landing, read by background-frag.glsl.
+// Where the camera is: the landing, the voyage between entries and the night
+// finale, read by background-frag.glsl.
 export interface BackgroundView {
   pan: number;          // u_Pan
   zoom: number;         // u_Zoom
@@ -23,7 +24,7 @@ export interface BackgroundView {
   finale: number;       // u_Finale
 }
 
-// The shape parameters the fireball's vertex shader reads. `params` in main.ts
+// The shape parameters the fireball's vertex shader reads. `params` in engine.ts
 // satisfies this.
 export interface FireballParams {
   displacement: number;   // u_LowFreqAmp
@@ -46,7 +47,7 @@ export class Shader {
   shader: WebGLShader;
 
   constructor(type: number, source: string) {
-    this.shader = gl.createShader(type);
+    this.shader = gl.createShader(type)!;
     gl.shaderSource(this.shader, source);
     gl.compileShader(this.shader);
 
@@ -63,39 +64,39 @@ class ShaderProgram {
   attrNor: number;
   attrCol: number;
 
-  unifModel: WebGLUniformLocation;
-  unifModelInvTr: WebGLUniformLocation;
-  unifViewProj: WebGLUniformLocation;
-  unifColor: WebGLUniformLocation;
-  unifTime: WebGLUniformLocation;
-  unifLowFreqAmp: WebGLUniformLocation;
-  unifLowFreqScale: WebGLUniformLocation;
-  unifFbmAmp: WebGLUniformLocation;
-  unifFbmScale: WebGLUniformLocation;
-  unifOctaves: WebGLUniformLocation;
-  unifRoilSpeed: WebGLUniformLocation;
-  unifPulsePeriod: WebGLUniformLocation;
-  unifPulseStrength: WebGLUniformLocation;
-  unifHeat: WebGLUniformLocation;
-  unifFlow: WebGLUniformLocation;
-  unifBandBlend: WebGLUniformLocation;
-  unifFlameHeight: WebGLUniformLocation;
-  unifTaper: WebGLUniformLocation;
-  unifBands: WebGLUniformLocation;
-  unifCameraPos: WebGLUniformLocation;
-  unifCurvature: WebGLUniformLocation;
-  unifDimensions: WebGLUniformLocation;
-  unifHorizon: WebGLUniformLocation;
-  unifAtmosphere: WebGLUniformLocation;
-  unifPan: WebGLUniformLocation;
-  unifZoom: WebGLUniformLocation;
-  unifCloudZoom: WebGLUniformLocation;
-  unifSpin: WebGLUniformLocation;
-  unifCloudDrift: WebGLUniformLocation;
-  unifInside: WebGLUniformLocation;
-  unifScroll: WebGLUniformLocation;
-  unifNight: WebGLUniformLocation;
-  unifFinale: WebGLUniformLocation;
+  unifModel: WebGLUniformLocation | null;
+  unifModelInvTr: WebGLUniformLocation | null;
+  unifViewProj: WebGLUniformLocation | null;
+  unifColor: WebGLUniformLocation | null;
+  unifTime: WebGLUniformLocation | null;
+  unifLowFreqAmp: WebGLUniformLocation | null;
+  unifLowFreqScale: WebGLUniformLocation | null;
+  unifFbmAmp: WebGLUniformLocation | null;
+  unifFbmScale: WebGLUniformLocation | null;
+  unifOctaves: WebGLUniformLocation | null;
+  unifRoilSpeed: WebGLUniformLocation | null;
+  unifPulsePeriod: WebGLUniformLocation | null;
+  unifPulseStrength: WebGLUniformLocation | null;
+  unifHeat: WebGLUniformLocation | null;
+  unifFlow: WebGLUniformLocation | null;
+  unifBandBlend: WebGLUniformLocation | null;
+  unifFlameHeight: WebGLUniformLocation | null;
+  unifTaper: WebGLUniformLocation | null;
+  unifBands: WebGLUniformLocation | null;
+  unifCameraPos: WebGLUniformLocation | null;
+  unifCurvature: WebGLUniformLocation | null;
+  unifDimensions: WebGLUniformLocation | null;
+  unifHorizon: WebGLUniformLocation | null;
+  unifAtmosphere: WebGLUniformLocation | null;
+  unifPan: WebGLUniformLocation | null;
+  unifZoom: WebGLUniformLocation | null;
+  unifCloudZoom: WebGLUniformLocation | null;
+  unifSpin: WebGLUniformLocation | null;
+  unifCloudDrift: WebGLUniformLocation | null;
+  unifInside: WebGLUniformLocation | null;
+  unifScroll: WebGLUniformLocation | null;
+  unifNight: WebGLUniformLocation | null;
+  unifFinale: WebGLUniformLocation | null;
 
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
@@ -158,11 +159,11 @@ class ShaderProgram {
 
   setModelMatrix(model: mat4) {
     this.use();
-    if (this.unifModel !== -1) {
+    if (this.unifModel !== null) {
       gl.uniformMatrix4fv(this.unifModel, false, model);
     }
 
-    if (this.unifModelInvTr !== -1) {
+    if (this.unifModelInvTr !== null) {
       let modelinvtr: mat4 = mat4.create();
       mat4.transpose(modelinvtr, model);
       mat4.invert(modelinvtr, modelinvtr);
@@ -172,21 +173,21 @@ class ShaderProgram {
 
   setViewProjMatrix(vp: mat4) {
     this.use();
-    if (this.unifViewProj !== -1) {
+    if (this.unifViewProj !== null) {
       gl.uniformMatrix4fv(this.unifViewProj, false, vp);
     }
   }
 
   setGeometryColor(color: vec4) {
     this.use();
-    if (this.unifColor !== -1) {
+    if (this.unifColor !== null) {
       gl.uniform4fv(this.unifColor, color);
     }
   }
 
   setTime(t: number) {
     this.use();
-    if (this.unifTime !== -1) {
+    if (this.unifTime !== null) {
       gl.uniform1f(this.unifTime, t);
     }
   }
@@ -195,46 +196,46 @@ class ShaderProgram {
   // always set together, once per frame.
   setFireballParams(p: FireballParams) {
     this.use();
-    if (this.unifLowFreqAmp !== -1) {
+    if (this.unifLowFreqAmp !== null) {
       gl.uniform1f(this.unifLowFreqAmp, p.displacement);
     }
-    if (this.unifLowFreqScale !== -1) {
+    if (this.unifLowFreqScale !== null) {
       gl.uniform1f(this.unifLowFreqScale, p.lobeScale);
     }
-    if (this.unifFbmAmp !== -1) {
+    if (this.unifFbmAmp !== null) {
       gl.uniform1f(this.unifFbmAmp, p.detail);
     }
-    if (this.unifFbmScale !== -1) {
+    if (this.unifFbmScale !== null) {
       gl.uniform1f(this.unifFbmScale, p.detailScale);
     }
-    if (this.unifOctaves !== -1) {
+    if (this.unifOctaves !== null) {
       gl.uniform1i(this.unifOctaves, p.octaves);
     }
-    if (this.unifRoilSpeed !== -1) {
+    if (this.unifRoilSpeed !== null) {
       gl.uniform1f(this.unifRoilSpeed, p.roilSpeed);
     }
-    if (this.unifPulsePeriod !== -1) {
+    if (this.unifPulsePeriod !== null) {
       gl.uniform1f(this.unifPulsePeriod, p.pulsePeriod);
     }
-    if (this.unifPulseStrength !== -1) {
+    if (this.unifPulseStrength !== null) {
       gl.uniform1f(this.unifPulseStrength, p.pulseStrength);
     }
-    if (this.unifHeat !== -1) {
+    if (this.unifHeat !== null) {
       gl.uniform1f(this.unifHeat, p.heat);
     }
-    if (this.unifFlow !== -1) {
+    if (this.unifFlow !== null) {
       gl.uniform1f(this.unifFlow, p.flow);
     }
-    if (this.unifBandBlend !== -1) {
+    if (this.unifBandBlend !== null) {
       gl.uniform1f(this.unifBandBlend, p.bandBlend);
     }
-    if (this.unifFlameHeight !== -1) {
+    if (this.unifFlameHeight !== null) {
       gl.uniform1f(this.unifFlameHeight, p.flameHeight);
     }
-    if (this.unifTaper !== -1) {
+    if (this.unifTaper !== null) {
       gl.uniform1f(this.unifTaper, p.taper);
     }
-    if (this.unifBands !== -1) {
+    if (this.unifBands !== null) {
       gl.uniform1f(this.unifBands, p.bands);
     }
   }
@@ -243,7 +244,7 @@ class ShaderProgram {
   // curve the tail along the path. Signed: positive turns counter-clockwise.
   setCurvature(k: number) {
     this.use();
-    if (this.unifCurvature !== -1) {
+    if (this.unifCurvature !== null) {
       gl.uniform1f(this.unifCurvature, k);
     }
   }
@@ -251,7 +252,7 @@ class ShaderProgram {
   // The fragment shader's rim glow needs to know where the eye is.
   setCameraPos(pos: vec3) {
     this.use();
-    if (this.unifCameraPos !== -1) {
+    if (this.unifCameraPos !== null) {
       gl.uniform3fv(this.unifCameraPos, pos);
     }
   }
@@ -260,48 +261,48 @@ class ShaderProgram {
   // planet stays circular whatever shape the window is.
   setDimensions(width: number, height: number) {
     this.use();
-    if (this.unifDimensions !== -1) {
+    if (this.unifDimensions !== null) {
       gl.uniform2f(this.unifDimensions, width, height);
     }
   }
 
   setBackgroundParams(p: BackgroundParams) {
     this.use();
-    if (this.unifHorizon !== -1) {
+    if (this.unifHorizon !== null) {
       gl.uniform1f(this.unifHorizon, p.horizon);
     }
-    if (this.unifAtmosphere !== -1) {
+    if (this.unifAtmosphere !== null) {
       gl.uniform1f(this.unifAtmosphere, p.atmosphere);
     }
   }
 
   setBackgroundView(v: BackgroundView) {
     this.use();
-    if (this.unifPan !== -1) {
+    if (this.unifPan !== null) {
       gl.uniform1f(this.unifPan, v.pan);
     }
-    if (this.unifZoom !== -1) {
+    if (this.unifZoom !== null) {
       gl.uniform1f(this.unifZoom, v.zoom);
     }
-    if (this.unifCloudZoom !== -1) {
+    if (this.unifCloudZoom !== null) {
       gl.uniform1f(this.unifCloudZoom, v.cloudZoom);
     }
-    if (this.unifSpin !== -1) {
+    if (this.unifSpin !== null) {
       gl.uniform1f(this.unifSpin, v.spin);
     }
-    if (this.unifCloudDrift !== -1) {
+    if (this.unifCloudDrift !== null) {
       gl.uniform1f(this.unifCloudDrift, v.cloudDrift);
     }
-    if (this.unifInside !== -1) {
+    if (this.unifInside !== null) {
       gl.uniform1f(this.unifInside, v.inside);
     }
-    if (this.unifScroll !== -1) {
+    if (this.unifScroll !== null) {
       gl.uniform1f(this.unifScroll, v.scroll);
     }
-    if (this.unifNight !== -1) {
+    if (this.unifNight !== null) {
       gl.uniform1f(this.unifNight, v.night);
     }
-    if (this.unifFinale !== -1) {
+    if (this.unifFinale !== null) {
       gl.uniform1f(this.unifFinale, v.finale);
     }
   }

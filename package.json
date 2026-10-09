@@ -1,28 +1,29 @@
 {
-    "name": "dopefolio",
-    "version": "1.0.0",
-    "description": "",
-    "main": "index.js",
-    "scripts": {
-      "compile:scss": "sass sass/main.scss css/style.css --watch",
-      "prefix:css": "postcss --use autoprefixer -b 'last 10 versions' css/style.css -o css/style.css",
-      "compress:css": "sass sass/main.scss css/style.css --style=compressed --no-source-map",
-      "build:fireball": "tsc --noEmit -p fireball && vite build --config fireball/vite.config.mts",
-      "watch:fireball": "vite build --watch --config fireball/vite.config.mts",
-      "stamp": "node scripts/stamp-assets.mjs",
-      "build": "npm run compress:css && npm run prefix:css && npm run build:fireball && npm run stamp"
-    },
-    "author": "",
-    "license": "GPL-3.0",
-    "dependencies": {
-      "gl-matrix": "^3.4.3"
-    },
-    "devDependencies": {
-      "autoprefixer": "^10.3.1",
-      "sass": "^1.80.0",
-      "npm-run-all": "^4.1.5",
-      "postcss-cli": "^8.3.1",
-      "typescript": "^5.7.2",
-      "vite": "^8.0.0"
-    }
+  "name": "tonyxtian",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Tony Yiding Tian's portfolio: a frame capture of his graphics work, over a live WebGL ocean",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
+    "build": "npm run typecheck && vite build && tsx scripts/prerender.ts",
+    "preview": "vite preview"
+  },
+  "author": "Tony Yiding Tian",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "gl-matrix": "^3.4.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^6.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vite": "^8.0.0"
   }
+}

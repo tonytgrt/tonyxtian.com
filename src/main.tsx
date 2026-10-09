@@ -1,6 +1,6 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
-import {boot, landed} from './actions';
+import {boot, finaleCleared, landed} from './actions';
 import {createEngine} from './engine/engine';
 import {bindInput} from './input/bind';
 import {setState} from './store';
@@ -17,11 +17,12 @@ if (engine) {
     landed();
     input.hold();
   };
+  engine.onFinaleClear = finaleCleared;
   engine.onStats = (stats) => setState({stats});
 }
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App webgl={engine !== null} />
+    <App />
   </StrictMode>,
 );

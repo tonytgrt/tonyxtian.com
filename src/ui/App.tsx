@@ -18,7 +18,7 @@ function Status() {
   );
 }
 
-export function App({webgl}: {webgl: boolean}) {
+export function App() {
   const landing = useStore((state) => state.landing);
   const isOpen = useStore((state) => state.open);
   return (
@@ -35,7 +35,7 @@ export function App({webgl}: {webgl: boolean}) {
           </div>
         </nav>
         <Stage />
-        <BottomBar webgl={webgl} />
+        <BottomBar />
       </div>
       <CaseStudy />
       <Sheet />

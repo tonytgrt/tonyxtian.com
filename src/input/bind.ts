@@ -1,7 +1,7 @@
 // The wheel, keys and touch. The page itself never scrolls: a gesture steps
 // between entries, or plays the descent while that is on. Only the case study
 // and the index scroll natively, and only when they overflow.
-import {entries} from '../content/entries';
+import {entries, FIRST_STOP} from '../content/entries';
 import {close, descend, open, select, setSheet, skip, step, stepCase} from '../actions';
 import {getState} from '../store';
 import {WheelSteps, wheelDelta} from './wheel';
@@ -25,7 +25,14 @@ function scroller(target: EventTarget | null): HTMLElement | null {
 }
 
 export function bindInput(): {hold: () => void} {
-  const wheel = new WheelSteps((direction) => step(direction));
+  const wheel = new WheelSteps((direction) => {
+    step(direction);
+    // A step up from About goes back to the intro, lifting the camera into
+    // space; the rest of that scroll mustn't then fight it on the way up.
+    if (getState().landing) {
+      wheel.hold();
+    }
+  });
 
   window.addEventListener('wheel', (e) => {
     // Pinching on a trackpad arrives as a wheel with ctrl held: that's the
@@ -38,7 +45,9 @@ export function bindInput(): {hold: () => void} {
     if (state.landing) {
       e.preventDefault();
       wheel.observe(e.timeStamp);
-      descend(delta / (DESCENT_SCREENS * window.innerHeight));
+      if (!wheel.holding) {
+        descend(delta / (DESCENT_SCREENS * window.innerHeight));
+      }
       return;
     }
     if (state.open) {
@@ -137,7 +146,7 @@ export function bindInput(): {hold: () => void} {
           step(e.shiftKey ? -1 : 1);
           break;
         case 'Home':
-          select(0);
+          select(FIRST_STOP);
           break;
         case 'End':
           select(entries.length - 1);

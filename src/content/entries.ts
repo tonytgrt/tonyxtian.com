@@ -1,4 +1,4 @@
-// Every stop on the site, in order: the title card and About, then the work by
+// Every stop on the site, in order: the intro and About, then the work by
 // pass, newest first within each, then Contact. Scrolling steps through them
 // one at a time. Content comes from the resumes in /home/ubuntu/TonyTianResume
 // (resume_cg.tex is the one used for new grad applications).
@@ -386,11 +386,17 @@ export const shownWork: WorkEntry[] = passes.flatMap((pass) =>
   work.filter((entry) => entry.pass === pass.id && !entry.draft));
 
 export const entries: Entry[] = [
-  {kind: 'page', id: 'home', title: 'Tony Tian', label: 'Title card'},
+  {kind: 'page', id: 'intro', title: 'Intro', label: 'Intro'},
   {kind: 'page', id: 'about', title: 'About', label: 'About'},
   ...shownWork,
   {kind: 'page', id: 'contact', title: 'Contact', label: 'Contact'},
 ];
+
+// The intro is the descent from space, so it has no page of its own: going to
+// it lifts the camera back up, and landing arrives at the first stop, About.
+// Without WebGL there is no descent, and About is where everything starts.
+export const INTRO = entries.findIndex((entry) => entry.id === 'intro');
+export const FIRST_STOP = entries.findIndex((entry) => entry.id === 'about');
 
 // The entries that have a page of their own, which a route opens.
 export function hasCaseStudy(entry: Entry): boolean {

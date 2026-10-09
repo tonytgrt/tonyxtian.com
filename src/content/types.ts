@@ -58,10 +58,11 @@ export interface WorkEntry {
   draft?: boolean;       // kept here, but not on the site
 }
 
-// The stops that aren't work: the title card, About and Contact.
+// The stops that aren't work: the intro (the descent itself, out in space),
+// About and Contact.
 export interface PageEntry {
   kind: 'page';
-  id: 'home' | 'about' | 'contact';
+  id: 'intro' | 'about' | 'contact';
   title: string;
   label: string;
 }

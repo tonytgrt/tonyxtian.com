@@ -10,7 +10,7 @@ that ocean; the last stop, Contact, looks up from the sea to a night sky.
 
 - Scroll, swipe or use the arrow keys to step through the projects, one per gesture.
 - Enter or "Open case study" opens a project's page, which has its own address (`/matforge/`).
-- Esc closes it. "Replay descent" plays the opening again.
+- Esc closes it. Intro, at the top of the index, or scrolling up from About goes back up to space for the descent again.
 
 ## Stack
 

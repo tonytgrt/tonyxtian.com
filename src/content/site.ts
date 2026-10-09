@@ -27,14 +27,6 @@ export const passes: Pass[] = [
   {id: 'systems', name: 'Systems & embedded'},
 ];
 
-export const home = {
-  tagline: 'Graphics engineer for GPU programming, real-time rendering and graphics systems.',
-  lines: [
-    "Bachelor's in Computer Engineering and accelerated Master's in Computer Graphics and Game Technology at the University of Pennsylvania, May 2027.",
-    'Seeking 2027 new grad roles in computer graphics, rendering engineering and GPU software.',
-  ],
-};
-
 export const about = {
   tagline: 'Graphics engineer working across GPU rendering, real-time graphics, and the tools and games built on them.',
   bio: [

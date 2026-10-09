@@ -5,7 +5,7 @@
 import {existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
 import {dirname, extname, join} from 'node:path';
 import {entries, shownWork} from '../src/content/entries';
-import {about, home, site} from '../src/content/site';
+import {about, site} from '../src/content/site';
 import type {Block, Media, WorkEntry} from '../src/content/types';
 
 const DIST = 'dist';
@@ -168,8 +168,9 @@ const pages: Page[] = [
     image: card,
     body: [
       `<h1>${escape(site.name)}</h1>`,
-      `<p>${escape(home.tagline)}</p>`,
-      ...home.lines.map((line) => `<p>${escape(line)}</p>`),
+      `<p>${escape(site.subtitle)}</p>`,
+      `<p>${escape(about.tagline)}</p>`,
+      `<p>${rich(about.bio[0])}</p>`,
       '<ul>',
       ...entries.filter((entry) => entry.kind === 'work' || entry.id === 'about').map((entry) =>
         entry.kind === 'work'

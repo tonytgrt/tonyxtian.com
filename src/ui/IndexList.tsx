@@ -1,5 +1,6 @@
 // The event list: every stop, grouped into passes, each with its number and
-// its headline result. Used by the side panel and the phone's sheet.
+// its headline result. Used by the side panel and the phone's sheet. Intro,
+// at the top, goes back up to the descent; without WebGL there is none.
 import {entries, hasCaseStudy} from '../content/entries';
 import type {Entry, Pass} from '../content/types';
 import {open, select} from '../actions';
@@ -26,6 +27,7 @@ entries.forEach((entry, index) => {
 
 export function IndexList() {
   const current = useStore((state) => state.index);
+  const webgl = useStore((state) => state.webgl);
   return (
     <ol className="events">
       {groups.map((group, g) => (
@@ -38,7 +40,7 @@ export function IndexList() {
             </p>
           )}
           <ol>
-            {group.rows.map(({entry, index}) => (
+            {group.rows.filter(({entry}) => webgl || entry.id !== 'intro').map(({entry, index}) => (
               <li key={entry.id}>
                 <button
                   type="button"

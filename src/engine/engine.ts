@@ -50,10 +50,26 @@ const DESCENT_SMOOTHING = 12;
 // second at this stiffness.
 const TRAVEL_STIFFNESS = 4.5;
 
-// The finale moves at a steady pace in stages per second: night falls over the
-// first stage, then the camera looks up over the second. Each stage eases in
-// and out, so they read as two beats rather than one long swing.
-const FINALE_RATE = 0.7;
+// The finale, the camera's look up from the sea to the horizon at Contact and
+// back down, is a critically damped spring too: it sets off at once, alongside
+// the glide, and settles without overshooting, nine tenths of the way in about
+// 1.2 s at this stiffness.
+const FINALE_STIFFNESS = 3.2;
+
+// Night falls over this many seconds from the moment the camera starts to look
+// up. It must be complete before any sky comes into view, or the day sky shows
+// above the curved horizon. The top of the screen clears the horizon at about
+// half the finale, 0.53 to 0.6 s in, depending on the width of the screen (the
+// view is about 34 degrees either side of its centre, up and down). On the way
+// back down it waits until the finale is under NIGHT_HOLD, with the sky out of
+// view again, before it lifts.
+const NIGHT_SECONDS = 0.45;
+const NIGHT_HOLD = 0.45;
+
+// How far back down the camera must come from Contact, as a fraction of the
+// finale, before the page lets the next entry onto the stage: about 1.2 s, by
+// when night has lifted too.
+const FINALE_CLEAR = 0.1;
 
 // How far the landing must have played before it counts as over.
 const LANDED_AT = 0.985;
@@ -124,12 +140,24 @@ export interface Engine {
   // there instead of flying in.
   targets: {
     descent: number;  // the landing: 0 in space, 1 down on the ocean (see Descent.ts)
-    finale: number;   // 0 by day, 1 once night has fallen, 2 looking up at the horizon
+    finale: number;   // 0 by day, looking down at the sea; 1 by night, looking out at the horizon
     travel: number;   // how far over the sea the camera has flown, in screens
   };
   readonly descent: number;               // the landing as drawn this frame
+  readonly finaleClear: boolean;          // the camera is down from the horizon, or nearly
   onLanded: (() => void) | null;          // once each time the landing completes
+  onFinaleClear: (() => void) | null;     // once each time it comes back down from Contact
   onStats: ((stats: EngineStats) => void) | null;
+}
+
+// One step of a critically damped spring from `x`, moving at `speed`, toward
+// `target`: the exact solution over `dt`, so it is steady at any frame rate.
+// Returns the new position and speed.
+function spring(x: number, speed: number, target: number, stiffness: number, dt: number): [number, number] {
+  const decay = Math.exp(-dt * stiffness);
+  const offset = x - target;
+  const pull = (speed + stiffness * offset) * dt;
+  return [target + (offset + pull) * decay, (speed - stiffness * pull) * decay];
 }
 
 // Everything only the flame needs, created only when it is shown.
@@ -217,19 +245,27 @@ export function createEngine(canvas: HTMLCanvasElement): Engine | null {
     pan: 0, zoom: 1, cloudZoom: 1, spin: 0, cloudDrift: 0, inside: 0, scroll: 0, night: 0, finale: 0,
   };
   let progress = 0;
-  let stage = 0;
+  let finale = 0;
+  let finaleSpeed = 0;
+  let night = 0;
   let travel = 0;
   let travelSpeed = 0;
   let first = true;
   let landed = false;
+  let clear = true;
   let shownDescent = -1;
+  let shownFinale = -1;
 
   const engine: Engine = {
     targets: {descent: 0, finale: 0, travel: 0},
     get descent() {
       return progress;
     },
+    get finaleClear() {
+      return clear;
+    },
     onLanded: null,
+    onFinaleClear: null,
     onStats: null,
   };
 
@@ -250,32 +286,51 @@ export function createEngine(canvas: HTMLCanvasElement): Engine | null {
 
     const targets = engine.targets;
     const descentTarget = Math.min(1, Math.max(0, targets.descent));
-    const stageTarget = Math.min(2, Math.max(0, targets.finale));
+    const finaleTarget = Math.min(1, Math.max(0, targets.finale));
     if (first) {
       progress = descentTarget;
-      stage = stageTarget;
+      finale = finaleTarget;
+      night = finaleTarget;
       travel = targets.travel;
       first = false;
     } else {
       progress += (descentTarget - progress) * (1 - Math.exp(-dt * DESCENT_SMOOTHING));
 
-      const stageStep = dt * FINALE_RATE;
-      stage = stageTarget > stage
-        ? Math.min(stageTarget, stage + stageStep)
-        : Math.max(stageTarget, stage - stageStep);
+      [finale, finaleSpeed] = spring(finale, finaleSpeed, finaleTarget, FINALE_STIFFNESS, dt);
+      // A spring only ever nears its target; once it is all but there, it is.
+      if (Math.abs(finale - finaleTarget) < 1e-4 && Math.abs(finaleSpeed) < 1e-3) {
+        finale = finaleTarget;
+        finaleSpeed = 0;
+      }
 
-      const decay = Math.exp(-dt * TRAVEL_STIFFNESS);
-      const offset = travel - targets.travel;
-      const pull = (travelSpeed + TRAVEL_STIFFNESS * offset) * dt;
-      travel = targets.travel + (offset + pull) * decay;
-      travelSpeed = (travelSpeed - TRAVEL_STIFFNESS * pull) * decay;
+      const nightTarget = finaleTarget > 0.5 || finale > NIGHT_HOLD ? 1 : 0;
+      const nightStep = dt / NIGHT_SECONDS;
+      night = nightTarget > night
+        ? Math.min(nightTarget, night + nightStep)
+        : Math.max(nightTarget, night - nightStep);
+
+      [travel, travelSpeed] = spring(travel, travelSpeed, targets.travel, TRAVEL_STIFFNESS, dt);
     }
+    // Brought back into range: a spring turned around mid-flight can overshoot.
+    const look = Math.min(1, Math.max(0, finale));
 
-    // The page fades its own pieces in and out with the landing through this.
+    // The page fades its own pieces in and out with the landing and the
+    // finale through these.
     if (Math.abs(progress - shownDescent) > 0.0005 || (progress === descentTarget && progress !== shownDescent)) {
       shownDescent = progress;
       root.style.setProperty('--descent', progress.toFixed(4));
     }
+    if (Math.abs(look - shownFinale) > 0.0005 || (look === finaleTarget && look !== shownFinale)) {
+      shownFinale = look;
+      root.style.setProperty('--finale', look.toFixed(4));
+    }
+
+    const nowClear = look <= FINALE_CLEAR;
+    if (nowClear && !clear) {
+      clear = true;
+      engine.onFinaleClear?.();
+    }
+    clear = nowClear;
 
     if (descentTarget >= 1 && progress > LANDED_AT) {
       if (!landed) {
@@ -292,13 +347,13 @@ export function createEngine(canvas: HTMLCanvasElement): Engine | null {
     view.cloudZoom = descent.cloudZoom;
     view.inside = descent.inside;
     view.scroll = travel;
-    view.night = ease(Math.min(1, stage));
-    view.finale = ease(Math.max(0, stage - 1));
+    view.night = ease(night);
+    view.finale = look;
     view.spin += dt * SPIN_RATE / descent.zoom;
     view.cloudDrift += dt * CLOUD_DRIFT_RATE / descent.cloudZoom;
 
     const fullRatio = Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
-    const ratio = descent.inside >= 1 && view.finale <= 0 ? OCEAN_PIXEL_RATIO : fullRatio;
+    const ratio = descent.inside >= 1 && view.finale < 0.005 ? OCEAN_PIXEL_RATIO : fullRatio;
     resize(ratio);
     gl.viewport(0, 0, canvas.width, canvas.height);
     renderer.clear();

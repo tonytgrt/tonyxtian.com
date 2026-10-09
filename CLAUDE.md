@@ -12,7 +12,7 @@ The layout is a GPU frame capture:
 - **Top bar.** It shows the renderer's live frame time, pixel ratio and wave count.
 - **Index.** The left panel is an event list of every stop, grouped into passes.
 - **Stage.** It shows one entry at a time over the ocean, with its counters.
-- **Bottom bar.** It holds a timeline from 2024 to 2026, "Replay descent" and the email address.
+- **Bottom bar.** It holds a timeline from 2024 to 2026 and the email address.
 
 Each scroll gesture, swipe or arrow key moves one entry. A case study opens
 in a pane docked on the right, full screen on phones, and it has its own
@@ -36,9 +36,9 @@ npm run preview    # serve dist/ on 5175
   - `engine.ts` exports `createEngine(canvas)`. It returns `null` without WebGL 2, and the page then keeps its CSS gradient.
     - The app steers the engine only through `engine.targets`, and the frame loop eases toward them:
       - `descent` runs 0→1.
-      - `finale` runs 0→2: night falls, then the camera looks up.
+      - `finale` runs 0→1: the camera looks up from the sea to the night horizon, as a spring like the glide.
       - `travel` is how far the camera has flown over the sea.
-    - It also exposes `descent`, `onLanded` and `onStats`, and writes the `--descent` CSS variable every frame.
+    - It also exposes `descent`, `finaleClear`, `onLanded`, `onFinaleClear` and `onStats`, and writes the `--descent` and `--finale` CSS variables every frame.
   - `Descent.ts` is the landing timeline. `Comet.ts` is the comet that circles the cursor while in space.
   - `shaders/background-frag.glsl` draws the planet, clouds, ocean, night sky and moon.
     - The ocean is adapted from afl_ext's MIT-licensed "Very fast procedural ocean". Its copyright and license notice must stay in that file.
@@ -48,7 +48,7 @@ npm run preview    # serve dist/ on 5175
   - Selecting and stepping.
   - Opening and closing a case study, with `pushState`.
   - `popstate`.
-  - The descent: skip and replay.
+  - The descent: skip, and `replay`, which is what selecting the intro does.
   - Boot: deep links and old `#about` / `#experience` / `#projects` anchors.
 - `src/input/` turns input into steps:
   - `wheel.ts` gives one step per wheel or trackpad gesture.
@@ -66,17 +66,29 @@ npm run preview    # serve dist/ on 5175
 
 ## Landing and finale
 
-- **Descent.** It plays only on a first visit: never on a deep link, never with `prefers-reduced-motion`, and not again once `localStorage['tonyxtian.landed']` is set.
+- **Descent.** It plays by itself only on a first visit: never on a deep link, never with `prefers-reduced-motion`, and not again once `localStorage['tonyxtian.landed']` is set.
   - The wheel plays it over 2.4 screens of scrolling, and the panels fade in over its last stretch (`.app[data-landing='true']` in the CSS).
   - When the engine reports landing, `input.hold()` swallows the rest of that scroll gesture.
   - The descent stays dark the whole way, with no white-out.
-- **Contact.** It is the last stop. Selecting it sets `targets.finale = 2`: night falls, then the camera pitches up to the horizon under the moon. The copyright line sits at the bottom of that stop and is the site's only footer.
+- **Intro.** The first entry, `intro`, is the descent itself; there is no title card. Selecting it runs `replay()`, which lifts the camera back into space.
+  - The Intro row in the index, the name in the top bar, and a step up from About (wheel, ↑ or a swipe) all select it. The rest of that scroll gesture is held, so it can't stall the rise.
+  - Landing, or Skip, arrives at About (`FIRST_STOP`), which returning visitors also start on.
+  - The intro puts nothing of its own on the stage. The stage draws `onStage`, not the selection, and is hidden while `landing`.
+    - Going up, the last entry fades out with the site. Coming down, the panels fade in around an empty stage, and About enters once landed.
+    - An entry's entrance direction is fixed when it mounts (`Entrance` in `Stage.tsx`). Changing the `animation-name` of a mounted element restarts the animation, which flashes the content.
+  - Without WebGL there is no intro: the row is hidden, and About is the first stop.
+- **Contact.** It is the last stop. Selecting it sets `targets.finale = 1`, and the camera pitches up to the horizon under the moon. The copyright line sits at the bottom of that stop and is the site's only footer.
+  - **Motion.** The pitch is a critically damped spring (`FINALE_STIFFNESS`) that sets off with the glide over the sea, so the camera never pauses. It is about 90% of the way in 1.2 s.
+  - **Night.** Night falls over the first 0.45 s (`NIGHT_SECONDS`). It must be complete before any sky comes into view, about 0.53–0.6 s in, or the day sky shows above the curved horizon. On the way back it holds until the sky is out of view (`NIGHT_HOLD`).
+    - Retiming either one means checking that the sky still comes into view only after night is complete. The view is ±34° vertically (focal length 1.5).
+  - **Card.** The Contact card and copyright fade with the camera through the `--finale` CSS variable.
+  - **Leaving Contact.** The stage keeps Contact while its card sinks away. The next entry comes on only once the camera is nearly down: `engine.onFinaleClear` → `finaleCleared()`, through `stageFor()` in `actions.ts`.
 - **Stage backgrounds.** Panels over the canvas are translucent glass and the stage itself is transparent, so the ocean stays visible.
 
 ## Content
 
 All text lives in typed files:
-- `src/content/site.ts` holds names, links, the title card, About (bio and skills), Contact and the pass names.
+- `src/content/site.ts` holds names, links, About (bio and skills), Contact and the pass names.
 - `src/content/entries.ts` holds the work, plus the ordered list of stops.
 
 Draw content from the resumes in `/home/ubuntu/TonyTianResume`. `resume_cg.tex` is the one used for new grad applications.

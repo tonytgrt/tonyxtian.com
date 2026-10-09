@@ -26,9 +26,12 @@
   --font: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  /* How far the descent has played, 0 in space to 1 landed: set by the
-     engine every frame, and by actions.ts before the first. */
+  /* How far the descent has played, 0 in space to 1 landed, and the finale,
+     0 looking down at the sea to 1 looking out at the night horizon: set by
+     the engine every frame, and by actions.ts before the first. Without WebGL
+     they stay as they are here. */
   --descent: 1;
+  --finale: 1;
 
   color-scheme: dark;
 }
@@ -453,6 +456,13 @@ kbd {
   pointer-events: none;
 }
 
+/* The intro has nothing on the stage. Going up to it, what was there fades out
+   as the camera rises; coming down, the panels fade in around an empty stage,
+   and the next stop enters once landed. */
+.app[data-landing='true'] .stage {
+  opacity: 0;
+}
+
 .stage__inner {
   height: 100%;
   animation: enter-down 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
@@ -746,22 +756,13 @@ kbd {
   background: var(--primary-hover);
 }
 
-/* The title card, About and Contact: type alone. */
+/* About and Contact: type alone. */
 .plate {
   display: flex;
   flex-direction: column;
   justify-content: center;
   height: 100%;
   max-width: 780px;
-}
-
-.plate__name {
-  margin: 0;
-  font-size: clamp(56px, 8vw, 112px);
-  font-weight: 700;
-  font-stretch: 118%;
-  line-height: 0.95;
-  letter-spacing: -0.03em;
 }
 
 .plate__title {
@@ -778,31 +779,6 @@ kbd {
   margin: 18px 0 0;
   font-size: clamp(18px, 1.7vw, 24px);
   line-height: 1.35;
-}
-
-.plate__lines {
-  display: grid;
-  gap: 6px;
-  max-width: 64ch;
-  margin: 18px 0 0;
-  padding: 0;
-  color: var(--muted);
-  list-style: none;
-}
-
-.plate__lines li {
-  position: relative;
-  padding-left: 18px;
-}
-
-.plate__lines li::before {
-  content: '';
-  position: absolute;
-  top: 0.75em;
-  left: 0;
-  width: 8px;
-  height: 1px;
-  background: var(--dim);
 }
 
 .plate__text {
@@ -824,11 +800,14 @@ kbd {
 }
 
 /* Contact is the night finale: the camera looks up to the horizon as night
-   falls, and the card comes up into the sky once it has. */
+   falls. The card follows the camera itself through --finale: it comes up into
+   the sky as the sky comes into view, and sinks away as the camera looks back
+   down. */
 .plate--contact {
   justify-content: flex-start;
   padding-top: 3vh;
-  animation: rise 0.9s 1.3s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  opacity: clamp(0, (var(--finale) - 0.5) * 3, 1);
+  transform: translateY(calc((1 - var(--finale)) * 28px));
 }
 
 .contact__mail {
@@ -855,7 +834,8 @@ kbd {
   color: var(--dim);
   font-size: 12px;
   text-align: center;
-  animation: rise 1s 2.6s both;
+  /* Last, as the camera settles on the horizon. */
+  opacity: clamp(0, (var(--finale) - 0.75) * 5, 1);
 }
 
 .copyright a {
@@ -865,13 +845,6 @@ kbd {
 
 .copyright a:hover {
   color: var(--fg);
-}
-
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
 }
 
 /* ---- bottom bar ---------------------------------------------------------- */
@@ -918,21 +891,6 @@ kbd {
   display: flex;
   align-items: center;
   gap: 16px;
-}
-
-.bottombar__replay {
-  height: 28px;
-  padding: 0 12px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  color: var(--muted);
-  letter-spacing: inherit;
-  text-transform: inherit;
-}
-
-.bottombar__replay:hover {
-  border-color: var(--line-strong);
-  color: var(--fg);
 }
 
 .bottombar__mail {
@@ -1611,10 +1569,6 @@ kbd {
     flex: 1;
   }
 
-  .plate__name {
-    font-size: 54px;
-  }
-
   .plate__title {
     font-size: 38px;
   }
@@ -1623,8 +1577,7 @@ kbd {
     font-size: 17px;
   }
 
-  .plate__text,
-  .plate__lines {
+  .plate__text {
     font-size: 14px;
   }
 

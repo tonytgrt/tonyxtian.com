@@ -1,4 +1,4 @@
-import {entries} from '../content/entries';
+import {entries, INTRO} from '../content/entries';
 import {site} from '../content/site';
 import {select} from '../actions';
 import {mediaUrl} from '../media';
@@ -30,7 +30,8 @@ export function TopBar() {
   const where = entry.kind === 'page' ? entry.label : passOf(entry)?.name;
   return (
     <header className="topbar">
-      <button type="button" className="topbar__home" onClick={() => select(0)}>
+      {/* Home is the intro: back up to space (or About, without WebGL). */}
+      <button type="button" className="topbar__home" onClick={() => select(INTRO)}>
         <img className="topbar__avatar" src={mediaUrl('head.jpg')} alt="" width="28" height="28" />
         <span className="topbar__name">{site.name}</span>
       </button>

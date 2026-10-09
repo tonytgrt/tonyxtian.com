@@ -1,11 +1,11 @@
 // The stage: the selected entry over the live ocean. A piece of work shows in
-// a viewport frame with its counters beside it; the title card, About and
-// Contact are type alone.
-import type {CSSProperties} from 'react';
-import {entries, shownWork} from '../content/entries';
-import {about, contact, home, site} from '../content/site';
+// a viewport frame with its counters beside it; About and Contact are type
+// alone.
+import {useState, type CSSProperties, type ReactNode} from 'react';
+import {entries, entryIndex} from '../content/entries';
+import {about, contact, site} from '../content/site';
 import type {WorkEntry} from '../content/types';
-import {close, open, select} from '../actions';
+import {close, open} from '../actions';
 import {useStore} from '../store';
 import {ExternalLink, GitHubIcon, LinkedInIcon, Media, pad, passOf, placeInPass, Rich} from './bits';
 
@@ -98,43 +98,25 @@ function WorkStage({entry, index}: {entry: WorkEntry; index: number}) {
   );
 }
 
-function HomeStage() {
-  const first = entries.indexOf(shownWork[0]);
+// The first stop once landed, so it also says how to get around.
+function AboutStage() {
+  const index = entryIndex('about');
   return (
-    <div className="plate plate--home">
-      <Kicker index={0} />
-      <h1 className="plate__name">{site.shortName}</h1>
-      <p className="plate__tagline">{home.tagline}</p>
-      <ul className="plate__lines">
-        {home.lines.map((line) => <li key={line}>{line}</li>)}
-      </ul>
+    <div className="plate plate--about">
+      <Kicker index={index} />
+      <h2 className="plate__title">About</h2>
+      <p className="plate__tagline">{about.tagline}</p>
+      <p className="plate__text"><Rich text={about.bio[0]} /></p>
       <div className="actions">
-        <button type="button" className="btn btn--primary" onClick={() => select(first)}>
-          See the work <span aria-hidden="true">↓</span>
+        <button type="button" className="btn btn--primary" onClick={() => open(index)}>
+          Read more <span aria-hidden="true">→</span>
         </button>
-        <button type="button" className="btn" onClick={() => select(1)}>About me</button>
+        <a className="btn" href={`mailto:${site.email}`}>Contact</a>
       </div>
       <p className="hint">
         <span className="hint--pointer">Scroll, or press <kbd>↓</kbd>, to step through the work. <kbd>Enter</kbd> opens a case study.</span>
         <span className="hint--touch">Swipe to step through the work.</span>
       </p>
-    </div>
-  );
-}
-
-function AboutStage() {
-  return (
-    <div className="plate plate--about">
-      <Kicker index={1} />
-      <h2 className="plate__title">About</h2>
-      <p className="plate__tagline">{about.tagline}</p>
-      <p className="plate__text"><Rich text={about.bio[0]} /></p>
-      <div className="actions">
-        <button type="button" className="btn btn--primary" onClick={() => open(1)}>
-          Read more <span aria-hidden="true">→</span>
-        </button>
-        <a className="btn" href={`mailto:${site.email}`}>Contact</a>
-      </div>
     </div>
   );
 }
@@ -147,7 +129,7 @@ function ContactStage() {
         <h2 className="plate__title">{contact.title}</h2>
         <p className="plate__text">{contact.text}</p>
         <a className="contact__mail" href={`mailto:${site.email}`}>{site.email}</a>
-        <div className="actions actions--center">
+        <div className="actions">
           <ExternalLink className="btn" href={site.linkedin}><LinkedInIcon /> LinkedIn</ExternalLink>
           <ExternalLink className="btn" href={site.github}><GitHubIcon /> GitHub</ExternalLink>
           <ExternalLink className="btn" href={site.resume}>Resume <span aria-hidden="true">↗</span></ExternalLink>
@@ -161,8 +143,25 @@ function ContactStage() {
   );
 }
 
+// One entry's turn on the stage. It comes in from below on a step down and
+// from above on a step up: whichever way it was when it arrived, so that a
+// later change of direction can't restart the entrance and flash it.
+function Entrance({direction, pass, children}: {direction: 1 | -1; pass?: string; children: ReactNode}) {
+  const [from] = useState(direction);
+  return (
+    <div className="stage__inner" data-direction={from} data-pass={pass}>
+      {children}
+    </div>
+  );
+}
+
 export function Stage() {
-  const index = useStore((state) => state.index);
+  // Not always the selected entry: the intro has nothing on the stage, which
+  // is hidden while it plays (see .app[data-landing] in the CSS). Going up to
+  // it, the stage keeps the last entry as it fades out; coming down, the next
+  // stop enters only once the camera has landed.
+  const index = useStore((state) => state.onStage);
+  const arrivals = useStore((state) => state.arrivals);
   const direction = useStore((state) => state.direction);
   const isOpen = useStore((state) => state.open);
   const entry = entries[index];
@@ -170,8 +169,6 @@ export function Stage() {
   let body;
   if (entry.kind === 'work') {
     body = <WorkStage entry={entry} index={index} />;
-  } else if (entry.id === 'home') {
-    body = <HomeStage />;
   } else if (entry.id === 'about') {
     body = <AboutStage />;
   } else {
@@ -186,9 +183,9 @@ export function Stage() {
       // click on it closes the case study.
       onClick={isOpen ? close : undefined}
     >
-      <div key={entry.id} className="stage__inner" data-direction={direction} data-pass={passOf(entry)?.id}>
+      <Entrance key={`${entry.id}:${arrivals}`} direction={direction} pass={passOf(entry)?.id}>
         {body}
-      </div>
+      </Entrance>
     </main>
   );
 }

@@ -2,7 +2,7 @@
 // opening and closing a case study (with its address), and the descent. The
 // components and the input handlers both come through here, and this is the
 // one place that steers the WebGL engine.
-import {entries, hasCaseStudy} from './content/entries';
+import {entries, FIRST_STOP, hasCaseStudy, INTRO} from './content/entries';
 import {site} from './content/site';
 import {ease} from './engine/Descent';
 import type {Engine} from './engine/engine';
@@ -18,8 +18,8 @@ const SEEN_KEY = 'tonyxtian.landed';
 const TRAVEL_PER_STEP = 0.8;
 const MAX_TRAVEL_STEPS = 2;
 
-// How long Replay takes to lift the camera back to space, and Skip to bring it
-// all the way down (less if part of the descent has already played).
+// How long going back to the intro takes to lift the camera into space, and
+// Skip to bring it all the way down (less if part of the descent has played).
 const REPLAY_SECONDS = 1.4;
 const SKIP_SECONDS = 1.8;
 
@@ -36,6 +36,8 @@ let travel = 0;
 // go back rather than stack another.
 let pushed = false;
 let tween = 0;
+// Where the running tween is taking the descent, if one is.
+let tweenTo: number | null = null;
 
 function clamp(x: number, lo: number, hi: number) {
   return Math.min(hi, Math.max(lo, x));
@@ -53,6 +55,15 @@ function caseTitle(index: number) {
   return `${entries[index].title} · ${site.name}`;
 }
 
+// What the stage shows once `next` is selected: `next` itself, except on the
+// way back from Contact. Then the stage keeps Contact, whose card sinks away
+// with the camera, and the next entry waits until the camera has come down
+// from the horizon (finaleCleared) rather than arriving over the night sky.
+function stageFor(next: number): number {
+  const waiting = engine !== null && !engine.finaleClear && entries[next].id !== 'contact';
+  return waiting ? getState().onStage : next;
+}
+
 // Points the camera at the selected entry: on over the sea, and up at the
 // night sky for Contact.
 function steer(from: number, to: number) {
@@ -61,7 +72,7 @@ function steer(from: number, to: number) {
   }
   travel += clamp(to - from, -MAX_TRAVEL_STEPS, MAX_TRAVEL_STEPS) * TRAVEL_PER_STEP;
   engine.targets.travel = travel;
-  engine.targets.finale = entries[to].id === 'contact' ? 2 : 0;
+  engine.targets.finale = entries[to].id === 'contact' ? 1 : 0;
 }
 
 // Fetches the images either side of the stage, so a step shows its picture at once.
@@ -77,6 +88,7 @@ function prefetch(index: number) {
 function stopTween() {
   cancelAnimationFrame(tween);
   tween = 0;
+  tweenTo = null;
 }
 
 function tweenDescent(to: number, seconds: number) {
@@ -91,9 +103,15 @@ function tweenDescent(to: number, seconds: number) {
     if (engine) {
       engine.targets.descent = from + (to - from) * ease(t);
     }
-    tween = t < 1 ? requestAnimationFrame(frame) : 0;
+    if (t < 1) {
+      tween = requestAnimationFrame(frame);
+    } else {
+      tween = 0;
+      tweenTo = null;
+    }
   };
   tween = requestAnimationFrame(frame);
+  tweenTo = to;
 }
 
 export function boot(created: Engine | null) {
@@ -106,12 +124,19 @@ export function boot(created: Engine | null) {
   }
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const landing = engine !== null && index < 0 && !seen() && !reducedMotion;
-  index = Math.max(0, index);
+  // A first visit starts at the intro, out in space; any other starts on the
+  // ocean, at About unless the address names somewhere else.
+  if (index < 0) {
+    index = landing ? INTRO : FIRST_STOP;
+  }
 
-  setState({index, open: deep, landing});
-  // The page's own fades follow the descent through this; the engine keeps it
-  // up to date from its first frame on.
+  setState({index, onStage: index === INTRO ? FIRST_STOP : index, open: deep, landing, webgl: engine !== null});
+  // The page's own fades follow the descent and the finale through these; the
+  // engine keeps them up to date from its first frame on.
   document.documentElement.style.setProperty('--descent', landing ? '0' : '1');
+  if (engine) {
+    document.documentElement.style.setProperty('--finale', '0');
+  }
   if (deep) {
     history.replaceState(null, '', pathFor(entries[index].id) + location.search);
     document.title = caseTitle(index);
@@ -137,7 +162,7 @@ function onPopState() {
       skip();
     }
     const from = getState().index;
-    setState({index, open: true, direction: index >= from ? 1 : -1});
+    setState({index, onStage: stageFor(index), open: true, direction: index >= from ? 1 : -1});
     steer(from, index);
     pushed = true;
     document.title = caseTitle(index);
@@ -150,14 +175,19 @@ function onPopState() {
 
 export function select(index: number) {
   const state = getState();
-  const next = clamp(index, 0, entries.length - 1);
+  // Without WebGL there is no descent, so no intro to go back to.
+  const next = clamp(index, engine ? INTRO : FIRST_STOP, entries.length - 1);
+  if (next === INTRO) {
+    replay();
+    return;
+  }
   if (next === state.index) {
     if (state.sheet) {
       setState({sheet: false});
     }
     return;
   }
-  setState({index: next, direction: next > state.index ? 1 : -1, sheet: false});
+  setState({index: next, onStage: stageFor(next), direction: next > state.index ? 1 : -1, sheet: false});
   steer(state.index, next);
   prefetch(next);
 
@@ -235,7 +265,14 @@ export function descend(amount: number) {
   if (!engine) {
     return;
   }
-  stopTween();
+  if (tweenTo !== null) {
+    // Already gliding that way, up to the intro or down for Skip: let it
+    // finish rather than stall it on the tail of the same scroll.
+    if (Math.sign(tweenTo - engine.targets.descent) === Math.sign(amount)) {
+      return;
+    }
+    stopTween();
+  }
   engine.targets.descent = clamp(engine.targets.descent + amount, 0, 1);
 }
 
@@ -249,21 +286,39 @@ export function skip() {
   tweenDescent(1, Math.max(0.4, SKIP_SECONDS * left));
 }
 
-// Lifts the camera back into space and starts the descent over.
+// Goes back to the intro: lifts the camera into space, from where scrolling
+// plays the descent again. The Intro entry, a step up from About and the name
+// in the top bar all come here.
 export function replay() {
-  if (!engine) {
+  const state = getState();
+  if (!engine || state.landing) {
     return;
   }
   close();
-  select(0);
-  setState({landing: true, sheet: false});
+  steer(state.index, INTRO);
+  // The stage keeps what it shows and fades out with the rest of the site;
+  // switching it to anything else now would flash on the way up.
+  setState({index: INTRO, landing: true, sheet: false, direction: -1});
   tweenDescent(0, REPLAY_SECONDS);
 }
 
-// The engine calls this once the camera is down.
+// The engine calls this once the camera is back down from the horizon after
+// Contact: whatever was selected meanwhile comes onto the stage now. During the
+// intro the stage stays as it is until the landing.
+export function finaleCleared() {
+  const state = getState();
+  if (!state.landing && state.onStage !== state.index) {
+    setState({onStage: state.index});
+  }
+}
+
+// The engine calls this once the camera is down. Down from the intro, the site
+// starts at About, which only now comes onto the stage.
 export function landed() {
-  if (getState().landing) {
-    setState({landing: false});
+  const state = getState();
+  if (state.landing || state.index === INTRO) {
+    const index = state.index === INTRO ? FIRST_STOP : state.index;
+    setState({landing: false, index, onStage: index, arrivals: state.arrivals + 1, direction: 1});
   }
   try {
     localStorage.setItem(SEEN_KEY, '1');

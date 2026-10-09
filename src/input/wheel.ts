@@ -76,6 +76,11 @@ export class WheelSteps {
     return pause;
   }
 
+  // Whether the gesture under way is being swallowed.
+  get holding(): boolean {
+    return this.held;
+  }
+
   // Swallows the rest of the gesture under way: the descent ends partway
   // through a scroll, and its momentum shouldn't run on into the site. It lasts
   // until the events themselves pause, judged by their own timestamps, since a

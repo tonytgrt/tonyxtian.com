@@ -5,21 +5,29 @@ import {useSyncExternalStore} from 'react';
 import type {EngineStats} from './engine/engine';
 
 export interface State {
-  index: number;            // the entry on the stage
+  index: number;            // the selected entry
+  onStage: number;          // the entry the stage shows: the selected one, except
+                            // that the intro has nothing there of its own
+  arrivals: number;         // how many times the descent has landed, so the
+                            // stage's entrance plays again each time
   open: boolean;            // its case study is open
   landing: boolean;         // the descent is playing, so the site isn't shown yet
   sheet: boolean;           // the phone's index sheet is up
   direction: 1 | -1;        // which way the last step went, for the stage's entrance
   stats: EngineStats | null;
+  webgl: boolean;           // the engine is drawing, so there is a descent and an intro
 }
 
 let state: State = {
   index: 0,
+  onStage: 0,
+  arrivals: 0,
   open: false,
   landing: false,
   sheet: false,
   direction: 1,
   stats: null,
+  webgl: false,
 };
 
 const listeners = new Set<() => void>();

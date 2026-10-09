@@ -12,4 +12,18 @@
     font-weight: 600;
     color: $themeClrTextBody;
   }
+
+  // The label over each group of skills in the About section.
+  &__group-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: $themeClrAccent;
+    margin-bottom: 1.2rem;
+
+    & ~ & {
+      margin-top: 1.5rem;
+    }
+  }
 }

@@ -31,7 +31,7 @@ This script is configured for deployment to `/var/www/tonyxtian.com` on the prod
 ## Project Structure
 
 ### Pages
-- `index.html` - Main homepage with hero, about, projects, and contact sections
+- `index.html` - Main homepage: hero (the landing), about, experience, projects, and the finale
 - `project-{1,2,3}.html` - Individual project case study pages (identical structure, different content)
 
 ### Styling Architecture
@@ -87,13 +87,20 @@ without one and the build fills it in.
 ## Key Implementation Details
 
 ### Adding New Projects
-1. Create a new project HTML file (e.g., `project-4.html`) by copying an existing project file
-2. Update the project content (title, description, images, links)
-3. Add a new `.projects__row` block in `index.html` within the `#projects` section
-4. Each project requires:
-   - Project image in `assets/` (PNG/JPEG)
-   - Case study link pointing to the new project HTML file
-   - Live demo or GitHub repo link
+Projects in `index.html` are in two groups, each headed by a `.projects__group-title`:
+"Rendering & GPU" first, then "Animation, Games & XR", newest first within each.
+Content is drawn from the resumes in `/home/ubuntu/TonyTianResume` (`resume_cg.tex`
+is the one used for new grad applications).
+
+1. Add a `.projects__row` in the right group. Under the title, a
+   `.projects__row-content-meta` line gives tech, dates, and team size; then a
+   one-paragraph description and a short `<ul>` of highlights
+2. Put its buttons in `.projects__row-content-links`: the main link as
+   `btn--theme`, a second (usually the GitHub repo) as `btn--theme-inv`
+3. Add the image to `assets/jpeg/` resized to about 1600px wide (the originals
+   are often 4-15 MB). A project with no image yet can use the
+   `.projects__row-img-cont--card` title card in its place (see `_home.scss`)
+4. Don't mention the Metal Liquid Glass Renderer anywhere on the site
 
 ### Image Assets
 - Profile/header images: `assets/jpeg/` or `assets/png/`

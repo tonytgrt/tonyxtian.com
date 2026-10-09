@@ -3,6 +3,7 @@ import {site} from '../content/site';
 import {setSheet, step} from '../actions';
 import {useStore} from '../store';
 import {address, MailIcon, pad, passOf, placeInPass, shownPasses} from './bits';
+import {DayNight} from './DayNight';
 import {Timeline} from './Timeline';
 
 export function BottomBar() {
@@ -29,6 +30,7 @@ export function BottomBar() {
       </p>
       <Timeline />
       <div className="bottombar__end">
+        <DayNight />
         <a className="bottombar__mail" href={`mailto:${site.email}`}>
           <MailIcon />
           <span>{site.email}</span>
@@ -37,6 +39,7 @@ export function BottomBar() {
       <div className="bottombar__phone">
         <button type="button" className="bottombar__index" aria-label="Index" onClick={() => setSheet(true)}>Addr</button>
         <span className="bottombar__count addr">{address(index)}</span>
+        <DayNight label={false} />
         <span className="bottombar__arrows">
           <button type="button" aria-label="Previous" disabled={index <= (webgl ? INTRO : FIRST_STOP)} onClick={() => step(-1)}>↑</button>
           <button type="button" aria-label="Next" disabled={index === entries.length - 1} onClick={() => step(1)}>↓</button>

@@ -8,10 +8,17 @@ import {ease} from './engine/Descent';
 import type {Engine} from './engine/engine';
 import {mediaUrl} from './media';
 import {indexForPath, pathFor} from './routing';
-import {getState, setState} from './store';
+import {getState, setState, type Theme} from './store';
 
 // Set once a visitor has landed, so the descent only plays on a first visit.
 const SEEN_KEY = 'tonyxtian.landed';
+
+// The visitor's theme, kept for next time. index.html reads it too, before
+// anything is drawn, so a light-theme visitor never sees the dark one flash.
+const THEME_KEY = 'tonyxtian.theme';
+
+// The browser's own chrome on phones follows the theme.
+const THEME_COLORS: Record<Theme, string> = {dark: '#020a12', light: '#dceaf5'};
 
 // How far the camera flies over the sea per step, in screens, and the most
 // steps' worth it flies at once, so a jump across the whole index still glides.
@@ -49,6 +56,43 @@ function seen(): boolean {
   } catch {
     return false;
   }
+}
+
+function storedTheme(): Theme {
+  try {
+    return localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
+  } catch {
+    return 'dark';
+  }
+}
+
+// The page's colours switch through data-theme (see app.css); the sea and sky
+// turn through the engine.
+function applyTheme(theme: Theme) {
+  const root = document.documentElement;
+  if (theme === 'light') {
+    root.dataset.theme = 'light';
+  } else {
+    delete root.dataset.theme;
+  }
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLORS[theme]);
+  if (engine) {
+    engine.targets.day = theme === 'light' ? 1 : 0;
+  }
+}
+
+export function setTheme(theme: Theme) {
+  setState({theme});
+  applyTheme(theme);
+  try {
+    localStorage.setItem(THEME_KEY, theme);
+  } catch {
+    // Without storage the theme lasts until the page is left.
+  }
+}
+
+export function toggleTheme() {
+  setTheme(getState().theme === 'light' ? 'dark' : 'light');
 }
 
 function caseTitle(index: number) {
@@ -130,7 +174,11 @@ export function boot(created: Engine | null) {
     index = landing ? INTRO : FIRST_STOP;
   }
 
-  setState({index, onStage: index === INTRO ? FIRST_STOP : index, open: deep, landing, webgl: engine !== null});
+  const theme = storedTheme();
+  setState({index, onStage: index === INTRO ? FIRST_STOP : index, open: deep, landing, webgl: engine !== null, theme});
+  // Before the engine's first frame, which takes its targets as they are: a
+  // page opened in the light theme starts in the day rather than turning to it.
+  applyTheme(theme);
   // The page's own fades follow the descent and the finale through these; the
   // engine keeps them up to date from its first frame on.
   document.documentElement.style.setProperty('--descent', landing ? '0' : '1');

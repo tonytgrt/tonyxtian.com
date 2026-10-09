@@ -14,7 +14,7 @@ The layout is a GPU frame capture:
   - Each location has a hex address from `address()` in `src/ui/bits.tsx`. The intro and About are 0x00 and 0x01, each pass takes the next high digit (Apple 0x10, MatForge 0x20, Vulkan Grass 0x21), and Contact is 0xFF.
   - Addresses are worked out from the order of the entries, never written by hand. A pass holds at most 16.
 - **Stage.** It shows one entry at a time over the ocean, with its counters.
-- **Bottom bar.** It holds a timeline from 2024 to 2026 and the email address.
+- **Bottom bar.** It holds a timeline from 2024 to 2026, the night/day theme switch (`src/ui/DayNight.tsx`) and the email address.
 
 Each scroll gesture, swipe or arrow key moves one entry. A case study opens
 in a pane that fills everything to the right of the index (full screen on
@@ -123,7 +123,23 @@ Draw content from the resumes in `/home/ubuntu/TonyTianResume`. `resume_cg.tex` 
 
 ## Theme
 
-- **Palette.** The site is dark, its palette taken from the ocean. Colours are CSS custom properties on `:root` in `app.css`: `--bg`, `--glass`, `--fg`, `--muted`, `--dim`, `--accent`, `--primary`, and the pass colours `--sun`, `--accent` and `--teal`, set through `[data-pass]`. Use those rather than new hard-coded colours.
+- **Two themes.** Dark ("night") is the site's own and the default. Light ("day") is set by `data-theme="light"` on `<html>`.
+  - `actions.ts` sets the theme (`setTheme` / `toggleTheme`) and keeps it in `localStorage['tonyxtian.theme']`. An inline script in `index.html` applies the stored theme before the first paint.
+- **Palette.** Colours are CSS custom properties on `:root` in `app.css`, with light-theme values under `:root[data-theme='light']`.
+  - There are tokens for panels, bars, lines, fills, frames, shadows and text, plus the pass colours (`--sun`, `--accent`, `--teal`), set through `[data-pass]`. Use those rather than new hard-coded colours.
+  - The tokens are registered with `@property` so a theme switch fades them, timed to the middle of the sea's change (`--theme-time`, `--theme-delay`).
+  - The intro, out in space, pins the dark ones.
+- **Frost.** In the light theme the stage sits on one frosted panel (`.stage::before`), since dark type on the bright sea alone doesn't read.
+  - The panel is inset from the stage by the gutter, which is exactly where the case study pane goes. So it lines up with the index panel and the bars by construction, with the stage's 36px padding keeping the content 22px inside it.
+  - Don't give the stage's parts frosts of their own: separately sized panels never line up.
+  - **Contact.** It hides the panel (`--panel: 0`) so the day sky stays clear, and frosts only its own card and the copyright.
+  - **Fading.** The frost fades with `--frost` and `--panel`, so the layout never moves when the theme switches.
+  - **Phones.** They keep their own glass cards instead.
+- **Sea and sky.** The engine's `targets.day` (0 night, 1 day) eases over 1.8 s (`DAY_SECONDS`), or at once with reduced motion, into `u_Day`.
+  - **The wheel.** In the shader the sun and moon ride opposite ends of one wheel of sky turning about the view's forward axis (`wheel`). Night has the moon at `MOON_DIR`. Day turns it half round clockwise, which sets the moon, brings the sun up on the left, over the top, and down into the moon's place.
+  - **The switch icon.** It is the same wheel in miniature, turning with the same timing.
+  - **By day.** The sea is brighter (`DAY_EXPOSURE`, `DAY_SCATTER`, `DAY_SHEEN`), and Contact shows the day sky with clouds and the sun's disc (`sunFace`) in place of the night.
+  - **Dark theme.** Every day term is zero at `u_Day = 0`, so the dark theme renders exactly as it did before there was a light one.
 - **Fonts.** Archivo is used with its width axis (`font-stretch`), and JetBrains Mono for the capture-tool labels and numbers.
 
 ## Contact

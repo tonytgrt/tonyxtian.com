@@ -1,21 +1,239 @@
-/* The site is dark, its palette taken from the ocean it lands on. Use these
-   tokens rather than new hard-coded colours. */
+/* Two themes. The dark one is the site's own, its palette taken from the night
+   sea it lands on; the light one is its day (data-theme="light" on <html>, set
+   by actions.ts and, before the first paint, by index.html). Use these tokens
+   rather than new hard-coded colours.
+
+   The colours are registered, so they can be animated: switching theme fades
+   them while the engine turns the wheel of sky, timed to its middle, when the
+   sea brightens or darkens. */
+@property --frost {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --bg {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #020a12;
+}
+
+@property --bg-glow {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0b2338;
+}
+
+@property --bg-mid {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #041322;
+}
+
+@property --glass {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(3, 12, 22, 0.66);
+}
+
+@property --glass-strong {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(3, 12, 22, 0.88);
+}
+
+@property --bar {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(2, 10, 18, 0.8);
+}
+
+@property --bar-soft {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(2, 10, 18, 0.52);
+}
+
+@property --line {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(255, 255, 255, 0.1);
+}
+
+@property --line-strong {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(255, 255, 255, 0.22);
+}
+
+@property --line-hover {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(255, 255, 255, 0.34);
+}
+
+@property --tint {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(255, 255, 255, 0.04);
+}
+
+@property --hover {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(255, 255, 255, 0.06);
+}
+
+@property --hover-strong {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(255, 255, 255, 0.09);
+}
+
+@property --fg {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #e6eef6;
+}
+
+@property --muted {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #9fb3c6;
+}
+
+@property --dim {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #6c8298;
+}
+
+@property --accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #4fb3ff;
+}
+
+@property --primary {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #1b6fc2;
+}
+
+@property --primary-hover {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #2a82d8;
+}
+
+@property --sun {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #f2b36b;
+}
+
+@property --teal {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #62c9b8;
+}
+
+@property --violet {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #b59cff;
+}
+
+@property --frame-bg {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(2, 8, 14, 0.7);
+}
+
+@property --frame-bar {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(3, 12, 22, 0.9);
+}
+
+@property --frame-media {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #01060b;
+}
+
+@property --shadow {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(0, 0, 0, 0.7);
+}
+
+@property --shadow-strong {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(0, 0, 0, 0.75);
+}
+
+@property --scroll {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(255, 255, 255, 0.18);
+}
+
+@property --selection {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(79, 179, 255, 0.35);
+}
+
+@property --scrim {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(0, 0, 0, 0.45);
+}
+
 :root {
-  --bg: #020a12;                       /* deep water */
-  --glass: rgba(3, 12, 22, 0.66);      /* panels over the ocean */
+  /* Deep water, behind everything. */
+  --bg: #020a12;
+  /* The gradient shown without WebGL. */
+  --bg-glow: #0b2338;
+  --bg-mid: #041322;
+  /* Panels over the ocean. */
+  --glass: rgba(3, 12, 22, 0.66);
   --glass-strong: rgba(3, 12, 22, 0.88);
-  --line: rgba(255, 255, 255, 0.10);
+  /* The top and bottom bars. */
+  --bar: rgba(2, 10, 18, 0.8);
+  --bar-soft: rgba(2, 10, 18, 0.52);
+  --line: rgba(255, 255, 255, 0.1);
   --line-strong: rgba(255, 255, 255, 0.22);
-  --fg: #e6eef6;                       /* headings and emphasis */
-  --muted: #9fb3c6;                    /* running text */
-  --dim: #6c8298;                      /* labels */
+  --line-hover: rgba(255, 255, 255, 0.34);
+  /* Faint fills: buttons, chips, counters. */
+  --tint: rgba(255, 255, 255, 0.04);
+  --hover: rgba(255, 255, 255, 0.06);
+  --hover-strong: rgba(255, 255, 255, 0.09);
+  /* Headings and emphasis. */
+  --fg: #e6eef6;
+  /* Running text. */
+  --muted: #9fb3c6;
+  /* Labels. */
+  --dim: #6c8298;
   --accent: #4fb3ff;
-  --primary: #1b6fc2;                  /* buttons: the sunlit blue of the sea */
+  /* Buttons: the sunlit blue of the sea. */
+  --primary: #1b6fc2;
   --primary-hover: #2a82d8;
   /* One colour per pass, in the index, the timeline and the stage. */
   --sun: #f2b36b;
   --teal: #62c9b8;
   --violet: #b59cff;
+  /* Viewport frames. */
+  --frame-bg: rgba(2, 8, 14, 0.7);
+  --frame-bar: rgba(3, 12, 22, 0.9);
+  --frame-media: #01060b;
+  --shadow: rgba(0, 0, 0, 0.7);
+  --shadow-strong: rgba(0, 0, 0, 0.75);
+  --scroll: rgba(255, 255, 255, 0.18);
+  --selection: rgba(79, 179, 255, 0.35);
+  --scrim: rgba(0, 0, 0, 0.45);
 
   --top: 52px;
   --bottom: 52px;
@@ -33,7 +251,81 @@
   --descent: 1;
   --finale: 1;
 
+  /* A theme switch: the engine's turn takes 1.8 s (DAY_SECONDS), and the sea
+     changes over the middle of it. */
+  --theme-time: 0.9s;
+  --theme-delay: 0.45s;
+  --theme-ease: cubic-bezier(0.45, 0, 0.55, 1);
+
   color-scheme: dark;
+  transition:
+    --frost var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --bg var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --bg-glow var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --bg-mid var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --glass var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --glass-strong var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --bar var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --bar-soft var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --line var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --line-strong var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --line-hover var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --tint var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --hover var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --hover-strong var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --fg var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --muted var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --dim var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --accent var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --primary var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --primary-hover var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --sun var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --teal var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --violet var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --frame-bg var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --frame-bar var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --frame-media var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --shadow var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --shadow-strong var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --scroll var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --selection var(--theme-time) var(--theme-ease) var(--theme-delay),
+    --scrim var(--theme-time) var(--theme-ease) var(--theme-delay);
+}
+
+:root[data-theme='light'] {
+  --bg: #dceaf5;
+  --bg-glow: #f7fbfe;
+  --bg-mid: #c9e2f2;
+  --glass: rgba(243, 248, 252, 0.74);
+  --glass-strong: rgba(245, 249, 253, 0.92);
+  --bar: rgba(243, 248, 252, 0.86);
+  --bar-soft: rgba(243, 248, 252, 0.6);
+  --line: rgba(12, 34, 56, 0.12);
+  --line-strong: rgba(12, 34, 56, 0.24);
+  --line-hover: rgba(12, 34, 56, 0.38);
+  --tint: rgba(12, 34, 56, 0.045);
+  --hover: rgba(12, 34, 56, 0.07);
+  --hover-strong: rgba(12, 34, 56, 0.1);
+  --fg: #0b1a2a;
+  --muted: #2a3f52;
+  --dim: #52687d;
+  --accent: #1666b5;
+  --primary: #1b6fc2;
+  --primary-hover: #155ea6;
+  --sun: #b45f0e;
+  --teal: #157a6b;
+  --violet: #6a4ed6;
+  --frame-bg: rgba(238, 245, 250, 0.82);
+  --frame-bar: rgba(240, 246, 251, 0.95);
+  --frame-media: #d5e6f2;
+  --shadow: rgba(14, 40, 66, 0.28);
+  --shadow-strong: rgba(14, 40, 66, 0.3);
+  --scroll: rgba(12, 34, 56, 0.22);
+  --selection: rgba(27, 111, 194, 0.22);
+  --scrim: rgba(12, 34, 56, 0.28);
+  --frost: 1;
+
+  color-scheme: light;
 }
 
 [data-pass='production'] { --pass: var(--sun); }
@@ -62,7 +354,7 @@ body {
 
 /* What shows if WebGL doesn't: the canvas covers it once a frame is drawn. */
 body {
-  background: radial-gradient(120% 90% at 70% 0%, #0b2338 0%, #041322 45%, var(--bg) 100%) fixed;
+  background: radial-gradient(120% 90% at 70% 0%, var(--bg-glow) 0%, var(--bg-mid) 45%, var(--bg) 100%) fixed;
   background-color: var(--bg);
 }
 
@@ -92,7 +384,7 @@ html.js #root {
 }
 
 ::selection {
-  background: rgba(79, 179, 255, 0.35);
+  background: var(--selection);
 }
 
 a {
@@ -124,14 +416,14 @@ kbd {
   padding: 1px 6px;
   border: 1px solid var(--line-strong);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--tint);
   font-family: var(--mono);
   font-size: 0.82em;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  scrollbar-color: var(--scroll) transparent;
 }
 
 /* Hex addresses keep their lowercase x, even in uppercase labels. */
@@ -214,7 +506,7 @@ kbd {
   min-width: 0;
   padding: 0 14px;
   border-bottom: 1px solid var(--line);
-  background: linear-gradient(to bottom, rgba(2, 10, 18, 0.8), rgba(2, 10, 18, 0.52));
+  background: linear-gradient(to bottom, var(--bar), var(--bar-soft));
   -webkit-backdrop-filter: blur(12px) saturate(1.2);
   backdrop-filter: blur(12px) saturate(1.2);
 }
@@ -229,7 +521,7 @@ kbd {
 }
 
 .topbar__home:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--hover);
 }
 
 .topbar__avatar {
@@ -323,7 +615,7 @@ kbd {
 
 .topbar__link:hover,
 .topbar__icon:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--hover);
   color: var(--fg);
 }
 
@@ -404,7 +696,7 @@ kbd {
 }
 
 .events__row:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--tint);
   color: var(--fg);
 }
 
@@ -441,13 +733,16 @@ kbd {
 
 /* ---- stage --------------------------------------------------------------- */
 
+/* The padding keeps the content 22px inside the light theme's panel, which
+   is inset from the stage by the gutter. */
 .stage {
   grid-area: stage;
   position: relative;
+  isolation: isolate;
   min-width: 0;
   min-height: 0;
-  padding: 28px 40px 26px 36px;
-  transition: opacity 0.3s;
+  padding: 36px;
+  transition: opacity 0.3s, --panel 0.5s ease;
 }
 
 /* An open case study covers the stage, which fades away behind it. */
@@ -487,6 +782,57 @@ kbd {
     opacity: 0;
     transform: translateY(-16px);
   }
+}
+
+/* In the light theme the stage sits on one frosted panel, since dark type on
+   the bright sea alone doesn't read. It takes exactly the case study's place,
+   so it lines up with the index beside it and the bars above and below, and
+   it fades in and out with the theme (--frost). Contact keeps its day sky
+   clear (--panel) and puts only its own card and the copyright on frost.
+   Phones have their glass cards instead. */
+@property --panel {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+
+.stage[data-entry='contact'] {
+  --panel: 0;
+}
+
+.stage::before,
+.contact::before,
+.copyright span::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -18px -22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--glass);
+  opacity: var(--frost);
+  pointer-events: none;
+}
+
+.stage::before {
+  inset: var(--gutter);
+  opacity: calc(var(--frost) * var(--panel));
+}
+
+.contact,
+.copyright span {
+  position: relative;
+  isolation: isolate;
+}
+
+.copyright span::before {
+  inset: -5px -12px;
+  border-radius: 999px;
+}
+
+[data-theme='light'] :is(.stage, .contact, .copyright span)::before {
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
 }
 
 .kicker {
@@ -534,8 +880,8 @@ kbd {
   overflow: hidden;
   border: 1px solid var(--line-strong);
   border-radius: 10px;
-  background: rgba(2, 8, 14, 0.7);
-  box-shadow: 0 30px 70px -24px rgba(0, 0, 0, 0.7);
+  background: var(--frame-bg);
+  box-shadow: 0 30px 70px -24px var(--shadow);
 }
 
 .frame__bar {
@@ -547,7 +893,7 @@ kbd {
   height: 30px;
   padding: 0 12px;
   border-bottom: 1px solid var(--line);
-  background: rgba(3, 12, 22, 0.9);
+  background: var(--frame-bar);
   color: var(--dim);
   font-size: 10.5px;
   white-space: nowrap;
@@ -564,7 +910,7 @@ kbd {
   height: auto;
   aspect-ratio: var(--ar);
   object-fit: cover;
-  background: #01060b;
+  background: var(--frame-media);
 }
 
 .counters {
@@ -649,7 +995,14 @@ kbd {
 }
 
 .card {
+  justify-self: start;
   max-width: 780px;
+}
+
+.contact {
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;
 }
 
 .card__title {
@@ -735,7 +1088,7 @@ kbd {
   padding: 0 16px;
   border: 1px solid var(--line-strong);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--tint);
   color: var(--fg);
   font-size: 14px;
   font-weight: 500;
@@ -745,13 +1098,14 @@ kbd {
 }
 
 .btn:hover {
-  border-color: rgba(255, 255, 255, 0.34);
-  background: rgba(255, 255, 255, 0.09);
+  border-color: var(--line-hover);
+  background: var(--hover-strong);
 }
 
 .btn--primary {
   border-color: transparent;
   background: var(--primary);
+  color: #fff;
 }
 
 .btn--primary:hover {
@@ -841,8 +1195,8 @@ kbd {
   overflow: hidden;
   border: 1px solid var(--line-strong);
   border-radius: 10px;
-  background: rgba(2, 8, 14, 0.7);
-  box-shadow: 0 30px 70px -24px rgba(0, 0, 0, 0.7);
+  background: var(--frame-bg);
+  box-shadow: 0 30px 70px -24px var(--shadow);
 }
 
 .portrait__media {
@@ -912,7 +1266,7 @@ kbd {
   min-width: 0;
   padding: 0 16px 0 28px;
   border-top: 1px solid var(--line);
-  background: linear-gradient(to top, rgba(2, 10, 18, 0.82), rgba(2, 10, 18, 0.52));
+  background: linear-gradient(to top, var(--bar), var(--bar-soft));
   -webkit-backdrop-filter: blur(12px) saturate(1.2);
   backdrop-filter: blur(12px) saturate(1.2);
   color: var(--muted);
@@ -945,6 +1299,68 @@ kbd {
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+/* The theme switch. Its wheel turns as the engine's does: the same 1.8 s, and
+   the same ease in and out. */
+.daynight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 10px 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.daynight:hover {
+  border-color: var(--line-strong);
+  color: var(--fg);
+}
+
+.daynight__dial {
+  display: block;
+  overflow: visible;
+}
+
+.daynight__wheel {
+  transform-box: view-box;
+  transform-origin: 16px 15.5px;
+  transition: transform 1.8s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+[data-theme='light'] .daynight__wheel {
+  transform: rotate(180deg);
+}
+
+.daynight__moon {
+  fill: #e9e2cf;
+}
+
+.daynight__sun circle {
+  fill: #f6b444;
+}
+
+.daynight__sun line {
+  stroke: #f6b444;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+.daynight__horizon {
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  opacity: 0.6;
+}
+
+.daynight__label {
+  min-width: 5ch;
 }
 
 .bottombar__mail {
@@ -1044,7 +1460,7 @@ kbd {
   background: var(--glass-strong);
   -webkit-backdrop-filter: blur(18px) saturate(1.2);
   backdrop-filter: blur(18px) saturate(1.2);
-  box-shadow: 0 30px 90px -20px rgba(0, 0, 0, 0.75);
+  box-shadow: 0 30px 90px -20px var(--shadow-strong);
   animation: case-in 0.34s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
@@ -1079,7 +1495,7 @@ kbd {
 
 .case__step:hover,
 .case__close:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--hover);
   color: var(--fg);
 }
 
@@ -1163,7 +1579,7 @@ kbd {
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--tint);
 }
 
 .case__counters dd {
@@ -1267,19 +1683,24 @@ kbd {
   padding: 4px 11px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--tint);
   color: var(--muted);
   font-size: 13px;
 }
 
 /* ---- the descent's opening ----------------------------------------------- */
 
+/* Out in space it is dark in either theme. */
 .intro {
+  --fg: #e6eef6;
+  --muted: #9fb3c6;
+  --line-strong: rgba(255, 255, 255, 0.22);
   position: fixed;
   z-index: 4;
   inset: 0;
   display: grid;
   place-items: center;
+  color: var(--fg);
   pointer-events: none;
   opacity: clamp(0, 1 - var(--descent) * 5, 1);
 }
@@ -1400,7 +1821,7 @@ kbd {
 .sheet__scrim {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--scrim);
   opacity: 0;
   transition: opacity 0.25s;
 }
@@ -1469,7 +1890,7 @@ kbd {
   }
 
   .stage {
-    padding: 22px 26px 22px 24px;
+    padding: 30px;
   }
 
   .hud {
@@ -1719,6 +2140,18 @@ kbd {
   .bottombar__arrows {
     display: flex;
     gap: 6px;
+  }
+
+  .stage::before,
+  .contact::before {
+    display: none;
+  }
+
+  .bottombar__phone .daynight {
+    height: 34px;
+    padding: 0 8px;
+    border-color: var(--line-strong);
+    border-radius: 8px;
   }
 
   .bottombar__arrows button {

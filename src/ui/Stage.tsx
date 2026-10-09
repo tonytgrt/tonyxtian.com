@@ -156,19 +156,23 @@ function ContactStage() {
   return (
     <>
       <div className="plate plate--contact">
-        <Kicker index={entries.length - 1} />
-        <h2 className="plate__title">{contact.title}</h2>
-        <p className="plate__text">{contact.text}</p>
-        <a className="contact__mail" href={`mailto:${site.email}`}>{site.email}</a>
-        <div className="actions">
-          <ExternalLink className="btn" href={site.linkedin}><LinkedInIcon /> LinkedIn</ExternalLink>
-          <ExternalLink className="btn" href={site.github}><GitHubIcon /> GitHub</ExternalLink>
-          <ExternalLink className="btn" href={site.resume}>Resume <span aria-hidden="true">↗</span></ExternalLink>
+        <div className="contact">
+          <Kicker index={entries.length - 1} />
+          <h2 className="plate__title">{contact.title}</h2>
+          <p className="plate__text">{contact.text}</p>
+          <a className="contact__mail" href={`mailto:${site.email}`}>{site.email}</a>
+          <div className="actions">
+            <ExternalLink className="btn" href={site.linkedin}><LinkedInIcon /> LinkedIn</ExternalLink>
+            <ExternalLink className="btn" href={site.github}><GitHubIcon /> GitHub</ExternalLink>
+            <ExternalLink className="btn" href={site.resume}>Resume <span aria-hidden="true">↗</span></ExternalLink>
+          </div>
         </div>
       </div>
       <p className="copyright">
-        {site.copyright}{' '}
-        <a href={site.url} target="_blank" rel="noreferrer">{site.copyrightName}</a>
+        <span>
+          {site.copyright}{' '}
+          <a href={site.url} target="_blank" rel="noreferrer">{site.copyrightName}</a>
+        </span>
       </p>
     </>
   );

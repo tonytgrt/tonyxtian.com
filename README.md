@@ -11,6 +11,7 @@ that ocean; the last stop, Contact, looks up from the sea to a night sky.
 - Scroll, swipe or use the arrow keys to step through the projects, one per gesture.
 - Enter or "Open case study" opens a project's page, which has its own address (`/matforge/`).
 - Esc closes it. Intro, at the top of the index, or scrolling up from About goes back up to space for the descent again.
+- The switch in the bottom bar turns night to day: the sky wheels round, the moon setting as the sun comes up, and the site goes light.
 
 ## Stack
 

@@ -71,6 +71,17 @@ const NIGHT_HOLD = 0.45;
 // when night has lifted too.
 const FINALE_CLEAR = 0.1;
 
+// One switch between the dark theme's night and the light theme's day, in
+// seconds: the half turn of the wheel of sky that sets the moon and brings up
+// the sun, or the other way round (see wheel in background-frag.glsl). Eased
+// in and out, as the switch's own little wheel in the bottom bar is, so the
+// two turn together.
+const DAY_SECONDS = 1.8;
+
+function easeInOutCubic(x: number) {
+  return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+}
+
 // How far the landing must have played before it counts as over.
 const LANDED_AT = 0.985;
 
@@ -141,6 +152,7 @@ export interface Engine {
   targets: {
     descent: number;  // the landing: 0 in space, 1 down on the ocean (see Descent.ts)
     finale: number;   // 0 by day, looking down at the sea; 1 by night, looking out at the horizon
+    day: number;      // 0 the dark theme's night, 1 the light theme's day
     travel: number;   // how far over the sea the camera has flown, in screens
   };
   readonly descent: number;               // the landing as drawn this frame
@@ -242,12 +254,13 @@ export function createEngine(canvas: HTMLCanvasElement): Engine | null {
   }
 
   const view: BackgroundView = {
-    pan: 0, zoom: 1, cloudZoom: 1, spin: 0, cloudDrift: 0, inside: 0, scroll: 0, night: 0, finale: 0,
+    pan: 0, zoom: 1, cloudZoom: 1, spin: 0, cloudDrift: 0, inside: 0, scroll: 0, night: 0, finale: 0, day: 0,
   };
   let progress = 0;
   let finale = 0;
   let finaleSpeed = 0;
   let night = 0;
+  let day = 0;
   let travel = 0;
   let travelSpeed = 0;
   let first = true;
@@ -257,7 +270,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine | null {
   let shownFinale = -1;
 
   const engine: Engine = {
-    targets: {descent: 0, finale: 0, travel: 0},
+    targets: {descent: 0, finale: 0, travel: 0, day: 0},
     get descent() {
       return progress;
     },
@@ -270,6 +283,9 @@ export function createEngine(canvas: HTMLCanvasElement): Engine | null {
   };
 
   const root = document.documentElement;
+  // The wheel of sky only turns for those who haven't asked for less motion;
+  // for them the theme simply changes.
+  const daySeconds = matchMedia('(prefers-reduced-motion: reduce)').matches ? 1e-3 : DAY_SECONDS;
   const startTime = performance.now();
   let lastTime = 0;
   let statFrames = 0;
@@ -287,10 +303,12 @@ export function createEngine(canvas: HTMLCanvasElement): Engine | null {
     const targets = engine.targets;
     const descentTarget = Math.min(1, Math.max(0, targets.descent));
     const finaleTarget = Math.min(1, Math.max(0, targets.finale));
+    const dayTarget = Math.min(1, Math.max(0, targets.day));
     if (first) {
       progress = descentTarget;
       finale = finaleTarget;
       night = finaleTarget;
+      day = dayTarget;
       travel = targets.travel;
       first = false;
     } else {
@@ -310,6 +328,9 @@ export function createEngine(canvas: HTMLCanvasElement): Engine | null {
         : Math.max(nightTarget, night - nightStep);
 
       [travel, travelSpeed] = spring(travel, travelSpeed, targets.travel, TRAVEL_STIFFNESS, dt);
+
+      const dayStep = dt / daySeconds;
+      day = dayTarget > day ? Math.min(dayTarget, day + dayStep) : Math.max(dayTarget, day - dayStep);
     }
     // Brought back into range: a spring turned around mid-flight can overshoot.
     const look = Math.min(1, Math.max(0, finale));
@@ -349,6 +370,7 @@ export function createEngine(canvas: HTMLCanvasElement): Engine | null {
     view.scroll = travel;
     view.night = ease(night);
     view.finale = look;
+    view.day = easeInOutCubic(day);
     view.spin += dt * SPIN_RATE / descent.zoom;
     view.cloudDrift += dt * CLOUD_DRIFT_RATE / descent.cloudZoom;
 

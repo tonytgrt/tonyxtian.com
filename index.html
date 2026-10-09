@@ -24,7 +24,14 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=JetBrains+Mono:wght@400;600&display=swap"
     />
-    <script>document.documentElement.classList.add('js');</script>
+    <script>
+      document.documentElement.classList.add('js');
+      try {
+        if (localStorage.getItem('tonyxtian.theme') === 'light') {
+          document.documentElement.dataset.theme = 'light';
+        }
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <canvas id="backdrop" aria-hidden="true"></canvas>

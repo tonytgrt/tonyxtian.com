@@ -25,6 +25,8 @@ uniform float u_Inside;      // 0 to 1: from the planet's own ocean to the close
 uniform float u_Scroll;      // How far the camera has travelled between entries, in screens.
 uniform float u_Night;       // 0 to 1: night falling over the last stop, Contact.
 uniform float u_Finale;      // 0 to 1: then the camera looking up from the sea to the horizon.
+uniform float u_Day;         // 0 to 1: from the dark theme's night to the light theme's day.
+                             // In between, the wheel of sky is turning (see wheel).
 
 in vec2 fs_Pos;
 
@@ -56,6 +58,15 @@ const vec3 SKY           = vec3(0.350, 0.620, 1.000); // atmospheric scattering 
 // The stars and the sun are far beyond the planet, so while the camera pans
 // they slide by at only this fraction of its speed.
 const float SKY_PARALLAX = 0.2;
+
+const float PI = 3.14159265;
+
+// How far toward the light theme's day the sea and sky have come: they
+// brighten through the middle of a switch, while the wheel is mid-turn.
+float dayTone()
+{
+    return smoothstep(0.1, 0.9, u_Day);
+}
 
 // Zooming in adds octaves of noise so the surface keeps its detail; this caps
 // how many, since by the deepest zoom the fog covers everything anyway.
@@ -253,7 +264,7 @@ vec3 landing(vec2 screen)
     // the ground, so the view hazes over a little on the way down. Kept dark,
     // to meet the deep blue of the sea it hands over to.
     float haze = clamp(log2(u_Zoom) / 4.0, 0.0, 1.0);
-    surface = mix(surface, SKY * 0.4, haze * 0.25);
+    surface = mix(surface, SKY * mix(0.4, 0.9, dayTone()), haze * mix(0.25, 0.45, dayTone()));
 
     // ---- composite --------------------------------------------------------
     // fwidth gives the edge a one-pixel blend at any resolution, so the limb
@@ -352,19 +363,46 @@ vec3 waves(vec2 position)
     return vec3(height, slope) / weights;
 }
 
+// The light theme's sun, at Contact where the moon is by night: a white-hot
+// disc a little smaller than the moon, in a glare that lights the sky round
+// it, and white clouds.
+const float SUN_RADIUS      = 0.032;
+const float SUN_BRIGHTNESS  = 6.0;
+const vec3  SUN_COLOR       = vec3(1.0, 0.95, 0.86);
+const vec3  DAY_CLOUD       = vec3(0.40, 0.43, 0.48);
+
+// The light theme's sea: brighter and paler than the dark theme's, a sunlit
+// blue that dark type reads on.
+const float DAY_EXPOSURE    = 3.0;
+const vec3  DAY_SCATTER     = vec3(0.020, 0.090, 0.150);
+const float DAY_SHEEN       = 0.12;
+
 // A very cheap sky: blue overhead, paling toward the horizon, with a glow
-// round the sun.
-vec3 daySky(vec3 dir)
+// round the sun. By day, looked at directly, a layer of white cloud drifts
+// across it.
+vec3 daySky(vec3 dir, vec3 sun, bool direct)
 {
     vec3  zenith   = vec3(5.5, 13.0, 22.4) / 22.4;
     float thick    = 1.0 / (dir.y + 0.1);
-    float lowSun   = 1.0 / (OCEAN_SUN.y * 11.0 + 1.0);
-    float around   = pow(abs(dot(OCEAN_SUN, dir)), 2.0);
+    float lowSun   = 1.0 / (max(sun.y, 0.0) * 11.0 + 1.0);
+    float around   = pow(abs(dot(sun, dir)), 2.0);
     vec3  sunColor = mix(vec3(1.0), max(vec3(0.0), vec3(1.0) - zenith), lowSun);
     vec3  sky      = max(vec3(0.0), zenith * sunColor
-                         - vec3(5.5, 13.0, 22.4) * 0.002 * (thick - 6.0 * OCEAN_SUN.y * OCEAN_SUN.y));
+                         - vec3(5.5, 13.0, 22.4) * 0.002 * (thick - 6.0 * sun.y * sun.y));
     sky *= thick * (0.24 + around * 0.24);
-    return sky * (1.0 + pow(1.0 - dir.y, 3.0)) * 0.5;
+    sky *= (1.0 + pow(1.0 - dir.y, 3.0)) * 0.5;
+
+    if (direct && u_Day > 0.0) {
+        // Clear blue deepening overhead, as a real day sky does.
+        float up = max(dir.y, 0.0);
+        sky = mix(sky, sky * vec3(0.45, 0.72, 1.1), smoothstep(0.04, 0.5, up) * u_Day);
+
+        vec2  cp    = dir.xz / max(up, 0.02) * 0.3 + vec2(u_Time * 0.004, 0.0);
+        float cover = smoothstep(0.6, 0.86, fbm(vec3(cp, 4.2), 4.0)) * smoothstep(0.02, 0.15, up);
+        vec3  cloud = DAY_CLOUD * (1.0 + 0.8 * pow(max(dot(dir, sun), 0.0), 6.0));
+        sky = mix(sky, cloud, cover * 0.6 * u_Day);
+    }
+    return sky;
 }
 
 // The moon the page ends under. It rises where the low sun was, so the light
@@ -383,23 +421,59 @@ const vec3  MOON_LIT        = normalize(vec3(-0.5, 0.25, 0.83));
 // a broad lobe that the waves break up into a wide spread of glints. At the
 // end of the page it is the moon's own disc, mirrored only in the wave faces
 // that happen to catch it, which lays the narrow path of light across the sea
-// that a real moon does.
+// that a real moon does. By day it is the sun's lobe again, wherever the sun is.
 const float SUN_GLINT    = 210.0;
 const float MOON_REFLECT = 5.0;
 
-// Where the light on the water comes from: the low sun behind the content,
-// moving to the moon as night falls.
-vec3 lightDir()
+// The sun and the moon ride opposite ends of one wheel of sky, turning about
+// the view's forward axis, which at Contact points at the middle of the
+// horizon. By night the moon hangs at MOON_DIR and the sun is down below the
+// opposite horizon. Switching to day turns the wheel half round, clockwise:
+// the moon sets on the right as the sun comes up on the left, climbs out over
+// the top of the view and comes down into the moon's place. Switching back
+// turns it home again.
+vec3 wheel(vec3 dir)
 {
-    return normalize(mix(OCEAN_SUN, MOON_DIR, u_Night));
+    float a = -PI * u_Day;
+    float c = cos(a), s = sin(a);
+    return vec3(dir.x * c - dir.y * s, dir.x * s + dir.y * c, dir.z);
 }
 
-float glint(vec3 dir, vec3 light)
+vec3 moonDir()
 {
-    float toward = dot(dir, light);
-    float sun    = pow(max(0.0, toward), 720.0) * SUN_GLINT;
-    float moon   = smoothstep(1.1, 0.8, acos(clamp(toward, -1.0, 1.0)) / MOON_RADIUS) * MOON_REFLECT;
-    return mix(sun, moon, u_Night);
+    return wheel(MOON_DIR);
+}
+
+// Behind the content the sun is the low one off to the right, in either
+// theme; out at the horizon by day it is the wheel's. The wheel's only takes
+// over once a switch has begun, so the dark theme's sea is lit just as before.
+vec3 sunDir()
+{
+    vec3 wheelSun = wheel(vec3(-MOON_DIR.xy, MOON_DIR.z));
+    return normalize(mix(OCEAN_SUN, wheelSun, u_Finale * smoothstep(0.0, 0.05, u_Day)));
+}
+
+// How much of the sky is night's: the nightfall over Contact, lifted by day.
+// It goes as the moon sets and the sun comes up, early in the wheel's turn,
+// and comes back as late in its turn home.
+float nightAmount()
+{
+    return u_Night * (1.0 - smoothstep(0.04, 0.35, u_Day));
+}
+
+// A body below the horizon lights nothing on the water.
+float risen(vec3 dir)
+{
+    return smoothstep(-0.03, 0.03, dir.y);
+}
+
+float glint(vec3 dir, vec3 sun, vec3 moon, float night)
+{
+    float toward = dot(dir, sun);
+    float sunGlint  = pow(max(0.0, toward), 720.0) * SUN_GLINT * risen(sun);
+    float moonGlint = smoothstep(1.1, 0.8, acos(clamp(dot(dir, moon), -1.0, 1.0)) / MOON_RADIUS)
+                    * MOON_REFLECT * risen(moon);
+    return mix(sunGlint, moonGlint, night);
 }
 
 // The night sky the page ends under: deep blue overhead, the last of the dusk
@@ -440,20 +514,27 @@ vec3 nightSky(vec3 dir, bool direct, vec3 light)
     return color;
 }
 
+// Where a direction in the world falls on the screen, for a camera pitched
+// down by `pitch`: x and y on the screen, and z, which is negative behind it.
+vec3 onScreen(vec3 dir, float pitch)
+{
+    float cp = cos(pitch), sp = sin(pitch);
+    vec3  v  = vec3(dir.x, dir.y * cp + dir.z * sp, -dir.y * sp + dir.z * cp);
+    return vec3(v.xy / max(v.z, 1e-4) * 1.5, v.z);
+}
+
 // The moon's face, where it falls on the screen for a camera pitched down by
 // `pitch`, shaded as the sphere it is. Drawn round on the screen itself, since
 // a disc of sky this far off to the side comes out stretched by the
 // perspective.
 vec3 moonFace(vec2 screen, vec3 light, float pitch)
 {
-    // The light's direction as the camera sees it: the view's pitch undone.
-    float cp = cos(pitch), sp = sin(pitch);
-    vec3  v  = vec3(light.x, light.y * cp + light.z * sp, -light.y * sp + light.z * cp);
+    vec3 v = onScreen(light, pitch);
     if (v.z <= 0.0) {
         return vec3(0.0);
     }
 
-    vec2  uv   = (screen - v.xy / v.z * 1.5) / (MOON_RADIUS * 1.5);
+    vec2  uv   = (screen - v.xy) / (MOON_RADIUS * 1.5);
     float r2   = dot(uv, uv);
     float disc = smoothstep(1.0, 0.96, sqrt(r2));
     if (disc <= 0.0) {
@@ -480,16 +561,31 @@ vec3 moonFace(vec2 screen, vec3 light, float pitch)
     return MOON_COLOR * MOON_BRIGHTNESS * albedo * shade * disc;
 }
 
+// The sun's disc and its glare, drawn on the screen as the moon's face is.
+// The glare reaches past the horizon, so the sky brightens a little before
+// the sun is up and after it has set.
+vec3 sunFace(vec2 screen, vec3 sun, float pitch)
+{
+    vec3 v = onScreen(sun, pitch);
+    if (v.z <= 0.0) {
+        return vec3(0.0);
+    }
+    float r     = length(screen - v.xy) / (SUN_RADIUS * 1.5);
+    float disc  = smoothstep(1.0, 0.92, r);
+    float glare = 0.9 * exp(-r * 0.6) + 0.18 * exp(-r * 0.09);
+    return SUN_COLOR * (disc * SUN_BRIGHTNESS + glare);
+}
+
 // The sky over the sea: the day's behind the content, the night's at the end
 // of the page, and each only worked out while it shows.
-vec3 sky(vec3 dir, bool direct, vec3 light)
+vec3 sky(vec3 dir, bool direct, vec3 sun, vec3 moon, float night)
 {
     vec3 color = vec3(0.0);
-    if (u_Night < 1.0) {
-        color = daySky(dir);
+    if (night < 1.0) {
+        color = daySky(dir, sun, direct);
     }
-    if (u_Night > 0.0) {
-        color = mix(color, nightSky(dir, direct, light), u_Night);
+    if (night > 0.0) {
+        color = mix(color, nightSky(dir, direct, moon), night);
     }
     return color;
 }
@@ -529,9 +625,13 @@ vec3 ocean(vec2 screen)
     float cp = cos(pitch), sp = sin(pitch);
     ray = vec3(ray.x, ray.y * cp - ray.z * sp, ray.y * sp + ray.z * cp);
 
-    // The sun's own disc is never looked at: it only ever shows on the water.
-    // By the time the sky comes into view, it is the moon's.
-    vec3 light = lightDir();
+    // The lights, wherever the wheel of sky has them: the sun, and the moon by
+    // night. Behind the content the sun shows only on the water; out at the
+    // horizon it is the moon by night and the sun's own disc by day.
+    vec3  sun      = sunDir();
+    vec3  moon     = moonDir();
+    float night    = nightAmount();
+    float exposure = mix(OCEAN_EXPOSURE, DAY_EXPOSURE, dayTone());
 
     // Where the ray meets the sea: a sphere the planet's size with its top
     // under the camera. Looking down behind the content the patch in view is
@@ -544,8 +644,10 @@ vec3 ocean(vec2 screen)
     // the sky is looked up level with it there, the horizon's own colour.
     if (ray.y >= 0.0 || disc < 0.0) {
         vec3 skyRay = normalize(vec3(ray.x, max(ray.y, 0.0), ray.z));
-        vec3 color  = sky(skyRay, true, light) + moonFace(screen, light, pitch) * u_Night;
-        return acesTonemap(color * OCEAN_EXPOSURE);
+        vec3 color  = sky(skyRay, true, sun, moon, night)
+                    + moonFace(screen, moon, pitch) * night
+                    + sunFace(screen, sun, pitch) * (1.0 - night);
+        return acesTonemap(color * exposure);
     }
 
     vec3  origin = vec3(0.0, height, u_Time * SEA_DRIFT + u_Scroll * SEA_SCROLL);
@@ -563,23 +665,27 @@ vec3 ocean(vec2 screen)
     // than its pixels.
     n = normalize(mix(n, up, 0.8 * min(1.0, sqrt(dist * 0.01) * 1.1)));
 
-    float fresnel = 0.04 + 0.96 * pow(1.0 - max(0.0, dot(-n, ray)), 5.0);
+    // By day a little more of the sky's light comes off the water everywhere,
+    // a sheen that pales the sea.
+    float f0      = mix(0.04, DAY_SHEEN, dayTone());
+    float fresnel = f0 + (1.0 - f0) * pow(1.0 - max(0.0, dot(-n, ray)), 5.0);
     vec3  r = reflect(ray, n);
     r.y = abs(r.y);
 
     // The sky and sun reflected off the surface: little of it this close to
     // straight down, more toward the edges of the view, where the water is
     // seen more obliquely and mirrors the brighter sky nearer the horizon.
-    vec3 reflection = sky(r, false, light) + glint(r, light);
+    vec3 reflection = sky(r, false, sun, moon, night) + glint(r, sun, moon, night);
 
     // And light scattered back up through the water, which is what lights the
     // middle of the view, where there is next to nothing to reflect. More of
     // it comes through the crests, and off the faces turned toward the low
     // sun, so the middle shows the waves' relief rather than a flat wash.
     float sunward    = max(dot(n, OCEAN_SUN), 0.0);
-    vec3  scattering = vec3(0.0293, 0.0698, 0.1717) * 0.3 * (0.2 + w.x) * (1.0 + 2.0 * sunward);
+    vec3  deep       = mix(vec3(0.0293, 0.0698, 0.1717) * 0.3, DAY_SCATTER, dayTone());
+    vec3  scattering = deep * (0.2 + w.x) * (1.0 + 2.0 * sunward);
 
-    return acesTonemap((fresnel * reflection + scattering) * OCEAN_EXPOSURE);
+    return acesTonemap((fresnel * reflection + scattering) * exposure);
 }
 
 void main()

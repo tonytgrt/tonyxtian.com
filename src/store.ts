@@ -4,6 +4,9 @@
 import {useSyncExternalStore} from 'react';
 import type {EngineStats} from './engine/engine';
 
+// The dark theme is the site's own: the night sea. The light theme is its day.
+export type Theme = 'dark' | 'light';
+
 export interface State {
   index: number;            // the selected entry
   onStage: number;          // the entry the stage shows: the selected one, except
@@ -16,6 +19,7 @@ export interface State {
   direction: 1 | -1;        // which way the last step went, for the stage's entrance
   stats: EngineStats | null;
   webgl: boolean;           // the engine is drawing, so there is a descent and an intro
+  theme: Theme;
 }
 
 let state: State = {
@@ -28,6 +32,7 @@ let state: State = {
   direction: 1,
   stats: null,
   webgl: false,
+  theme: 'dark',
 };
 
 const listeners = new Set<() => void>();

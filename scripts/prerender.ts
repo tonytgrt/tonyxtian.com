@@ -149,6 +149,8 @@ function workPage(entry: WorkEntry): Page {
   };
 }
 
+checkMedia(about.portrait);
+checkMedia(about.portraitPhone);
 for (const entry of shownWork) {
   if (entry.hero) {
     checkMedia(entry.hero);
@@ -187,7 +189,8 @@ const pages: Page[] = [
     image: card,
     body: [
       `<p><a href="/">${escape(site.name)}</a></p>`,
-      '<h1>About</h1>',
+      `<h1>${escape(site.name)}</h1>`,
+      image(about.portrait),
       ...about.bio.map((paragraph) => `<p>${rich(paragraph)}</p>`),
       ...about.skills.map((group) => `<h2>${escape(group.group)}</h2><p>${group.items.map(escape).join(', ')}</p>`),
       contactLine,

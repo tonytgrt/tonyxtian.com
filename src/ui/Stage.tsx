@@ -5,8 +5,9 @@ import {useState, type CSSProperties, type ReactNode} from 'react';
 import {entries, entryIndex} from '../content/entries';
 import {about, contact, site} from '../content/site';
 import type {WorkEntry} from '../content/types';
-import {close, open} from '../actions';
+import {open} from '../actions';
 import {useStore} from '../store';
+import {mediaUrl} from '../media';
 import {ExternalLink, GitHubIcon, LinkedInIcon, Media, pad, passOf, placeInPass, Rich} from './bits';
 
 // Shown as a column beside the frame on wide screens and as a row in the card
@@ -98,25 +99,55 @@ function WorkStage({entry, index}: {entry: WorkEntry; index: number}) {
   );
 }
 
-// The first stop once landed, so it also says how to get around.
+// The first stop once landed: the name, with the portrait framed beside it
+// like the work's pictures, and how to get around.
 function AboutStage() {
   const index = entryIndex('about');
+  const portrait = about.portrait;
+  const phone = about.portraitPhone;
   return (
     <div className="plate plate--about">
-      <Kicker index={index} />
-      <h2 className="plate__title">About</h2>
-      <p className="plate__tagline">{about.tagline}</p>
-      <p className="plate__text"><Rich text={about.bio[0]} /></p>
-      <div className="actions">
-        <button type="button" className="btn btn--primary" onClick={() => open(index)}>
-          Read more <span aria-hidden="true">→</span>
-        </button>
-        <a className="btn" href={`mailto:${site.email}`}>Contact</a>
+      <div className="about">
+        <div className="about__head">
+          <Kicker index={index} />
+          <h2 className="plate__title">{site.name}</h2>
+        </div>
+        <figure
+          className="portrait"
+          style={{'--ar': portrait.width / portrait.height, '--ar-phone': phone.width / phone.height} as CSSProperties}
+        >
+          <figcaption className="frame__bar">
+            <span>Viewport · Portrait</span>
+            <span>{portrait.width} × {portrait.height}</span>
+          </figcaption>
+          {/* Only the crop the screen shows is downloaded. */}
+          <picture>
+            <source media="(min-width: 760px)" srcSet={mediaUrl(portrait.src)} width={portrait.width} height={portrait.height} />
+            <img
+              className="portrait__media"
+              src={mediaUrl(phone.src)}
+              alt={portrait.alt}
+              width={phone.width}
+              height={phone.height}
+              decoding="async"
+            />
+          </picture>
+        </figure>
+        <div className="about__body">
+          <p className="plate__tagline">{about.tagline}</p>
+          <p className="plate__text"><Rich text={about.bio[0]} /></p>
+          <div className="actions">
+            <button type="button" className="btn btn--primary" onClick={() => open(index)}>
+              Read more <span aria-hidden="true">→</span>
+            </button>
+            <a className="btn" href={`mailto:${site.email}`}>Contact</a>
+          </div>
+          <p className="hint">
+            <span className="hint--pointer">Scroll, or press <kbd>↓</kbd>, to step through the work. <kbd>Enter</kbd> opens a case study.</span>
+            <span className="hint--touch">Swipe to step through the work.</span>
+          </p>
+        </div>
       </div>
-      <p className="hint">
-        <span className="hint--pointer">Scroll, or press <kbd>↓</kbd>, to step through the work. <kbd>Enter</kbd> opens a case study.</span>
-        <span className="hint--touch">Swipe to step through the work.</span>
-      </p>
     </div>
   );
 }
@@ -163,7 +194,6 @@ export function Stage() {
   const index = useStore((state) => state.onStage);
   const arrivals = useStore((state) => state.arrivals);
   const direction = useStore((state) => state.direction);
-  const isOpen = useStore((state) => state.open);
   const entry = entries[index];
 
   let body;
@@ -176,13 +206,7 @@ export function Stage() {
   }
 
   return (
-    <main
-      className="stage"
-      data-entry={entry.id}
-      // With a case study open the stage is only a backdrop to it, and a
-      // click on it closes the case study.
-      onClick={isOpen ? close : undefined}
-    >
+    <main className="stage" data-entry={entry.id}>
       <Entrance key={`${entry.id}:${arrivals}`} direction={direction} pass={passOf(entry)?.id}>
         {body}
       </Entrance>

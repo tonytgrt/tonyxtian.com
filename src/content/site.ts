@@ -1,4 +1,4 @@
-import type {Pass} from './types';
+import type {Media, Pass} from './types';
 
 export const site = {
   name: 'Tony Yiding Tian',
@@ -29,6 +29,20 @@ export const passes: Pass[] = [
 
 export const about = {
   tagline: 'Graphics engineer working across GPU rendering, real-time graphics, and the tools and games built on them.',
+  // The headshot, cropped from the full-size original in src/media/originals/:
+  // 4:3 beside the text on wider screens, 4:5 as a small frame on phones.
+  portrait: {
+    src: 'portrait-wide.jpg',
+    width: 1200,
+    height: 900,
+    alt: 'Tony Yiding Tian on a city street at night, in a Penn Engineering T-shirt',
+  } satisfies Media,
+  portraitPhone: {
+    src: 'portrait.jpg',
+    width: 800,
+    height: 1000,
+    alt: 'Tony Yiding Tian on a city street at night, in a Penn Engineering T-shirt',
+  } satisfies Media,
   bio: [
     "I'm **Tony**, a fourth year undergraduate student at the **University of Pennsylvania**, pursuing a Bachelor's in **Computer Engineering** and an accelerated Master's in **Computer Graphics and Game Technology**, both expected in May 2027. I specialize in **GPU programming**, **real-time rendering**, and **graphics systems**.",
     'This summer I was a **UI Rendering GPU Software Engineer Intern at Apple**, working on developer tooling for Core Animation and fixing system UI rendering bugs through the iOS and macOS 27 betas.',

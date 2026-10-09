@@ -30,6 +30,24 @@ export function placeInPass(index: number): [number, number] {
 export const shownPasses: Pass[] = passes.filter((pass) =>
   entries.some((entry) => entry.kind === 'work' && entry.pass === pass.id));
 
+// An entry's address in the index, in hex like a debugger's. The intro and
+// About are 0x00 and 0x01; each pass takes the next high digit, its entries
+// numbered on from 0 (Apple 0x10, MatForge 0x20, Vulkan Grass 0x21); Contact,
+// the end, is 0xFF. A pass can hold 16 entries before it runs into the next.
+export function address(index: number): string {
+  const entry = entries[index];
+  let value: number;
+  if (entry.kind === 'work') {
+    const pass = shownPasses.findIndex((shown) => shown.id === entry.pass) + 1;
+    value = pass * 16 + placeInPass(index)[0] - 1;
+  } else if (entry.id === 'contact') {
+    value = 0xff;
+  } else {
+    value = entries.filter((page) => page.kind === 'page' && page.id !== 'contact').indexOf(entry);
+  }
+  return `0x${value.toString(16).toUpperCase().padStart(2, '0')}`;
+}
+
 // Text with **bold** spans.
 export function Rich({text}: {text: string}) {
   const parts = text.split('**');

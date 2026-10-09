@@ -2,7 +2,7 @@ import {entries, FIRST_STOP, INTRO} from '../content/entries';
 import {site} from '../content/site';
 import {setSheet, step} from '../actions';
 import {useStore} from '../store';
-import {MailIcon, pad, passOf, placeInPass, shownPasses} from './bits';
+import {address, MailIcon, pad, passOf, placeInPass, shownPasses} from './bits';
 import {Timeline} from './Timeline';
 
 export function BottomBar() {
@@ -23,7 +23,7 @@ export function BottomBar() {
         ) : (
           <>
             <span className="bottombar__pass">{entry.kind === 'page' ? entry.label : ''}</span>
-            <span className="bottombar__count">{pad(index)} / {pad(entries.length - 1)}</span>
+            <span className="bottombar__count addr">{address(index)}</span>
           </>
         )}
       </p>
@@ -35,8 +35,8 @@ export function BottomBar() {
         </a>
       </div>
       <div className="bottombar__phone">
-        <button type="button" className="bottombar__index" onClick={() => setSheet(true)}>Index</button>
-        <span className="bottombar__count">{pad(index)} / {pad(entries.length - 1)}</span>
+        <button type="button" className="bottombar__index" aria-label="Index" onClick={() => setSheet(true)}>Addr</button>
+        <span className="bottombar__count addr">{address(index)}</span>
         <span className="bottombar__arrows">
           <button type="button" aria-label="Previous" disabled={index <= (webgl ? INTRO : FIRST_STOP)} onClick={() => step(-1)}>↑</button>
           <button type="button" aria-label="Next" disabled={index === entries.length - 1} onClick={() => step(1)}>↓</button>

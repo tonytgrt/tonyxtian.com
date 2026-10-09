@@ -5,7 +5,7 @@ import {entries, hasCaseStudy} from '../content/entries';
 import type {Entry, Pass} from '../content/types';
 import {open, select} from '../actions';
 import {useStore} from '../store';
-import {pad, shownPasses} from './bits';
+import {address, shownPasses} from './bits';
 
 interface Group {
   pass: Pass | null;
@@ -48,7 +48,7 @@ export function IndexList() {
                   aria-current={index === current ? 'true' : undefined}
                   onClick={() => (index === current && hasCaseStudy(entry) ? open(index) : select(index))}
                 >
-                  <span className="events__num">{pad(index)}</span>
+                  <span className="events__num">{address(index)}</span>
                   <span className="events__name">{entry.kind === 'work' ? entry.label ?? entry.title : entry.label}</span>
                   {entry.kind === 'work' && <span className="events__metric">{entry.metric}</span>}
                 </button>

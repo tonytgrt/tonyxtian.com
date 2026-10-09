@@ -10,13 +10,16 @@ tonyxtian.com. It is a single-page app built with Vite, React 19 and TypeScript
 
 The layout is a GPU frame capture:
 - **Top bar.** It shows the renderer's live frame time, pixel ratio and wave count.
-- **Index.** The left panel is an event list of every stop, grouped into passes.
+- **Index.** The left panel, headed ADDR, lists every location, grouped into passes.
+  - Each location has a hex address from `address()` in `src/ui/bits.tsx`. The intro and About are 0x00 and 0x01, each pass takes the next high digit (Apple 0x10, MatForge 0x20, Vulkan Grass 0x21), and Contact is 0xFF.
+  - Addresses are worked out from the order of the entries, never written by hand. A pass holds at most 16.
 - **Stage.** It shows one entry at a time over the ocean, with its counters.
 - **Bottom bar.** It holds a timeline from 2024 to 2026 and the email address.
 
 Each scroll gesture, swipe or arrow key moves one entry. A case study opens
-in a pane docked on the right, full screen on phones, and it has its own
-address.
+in a pane that fills everything to the right of the index (full screen on
+phones), and it has its own address. Its article is centred and at most 980px
+wide, with running text kept to 72ch.
 
 ## Commands
 
@@ -58,6 +61,7 @@ npm run preview    # serve dist/ on 5175
 - `src/ui/` holds the React components: `App`, `TopBar`, `IndexList`, `Stage`, `Timeline`, `BottomBar`, `CaseStudy`, `Intro`, `Sheet` and the shared `bits`.
 - `src/styles/app.css` is the only stylesheet: plain CSS, with tokens on `:root`.
 - `src/media/` holds images and video, imported through `src/media.ts`, so Vite gives them content-hashed names.
+  - Only files directly in `src/media/` ship. `src/media/originals/` keeps full-size sources, such as the uncropped headshot behind the two portrait crops, and `src/media/drafts/` keeps drafts' images; the build leaves both out.
 - `scripts/prerender.ts` runs after `vite build`:
   - It writes `dist/<route>/index.html` for every route, with its own title, description, canonical URL and share card.
   - It adds a plain-HTML fallback of the content for crawlers and no-JS visitors.
@@ -88,7 +92,9 @@ npm run preview    # serve dist/ on 5175
 ## Content
 
 All text lives in typed files:
-- `src/content/site.ts` holds names, links, About (bio and skills), Contact and the pass names.
+- `src/content/site.ts` holds names, links, About (bio, skills and the portrait), Contact and the pass names.
+  - The About stage is headed by the name, with the portrait framed beside it like the work's pictures.
+  - It uses two crops of the headshot through a `<picture>`, so each screen downloads only its own: 4:3 on desktop (`portrait-wide.jpg`, `about.portrait`), and a 4:5 thumbnail beside the name on phones (`portrait.jpg`, `about.portraitPhone`).
 - `src/content/entries.ts` holds the work, plus the ordered list of stops.
 
 Draw content from the resumes in `/home/ubuntu/TonyTianResume`. `resume_cg.tex` is the one used for new grad applications.

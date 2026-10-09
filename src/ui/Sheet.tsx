@@ -10,7 +10,7 @@ export function Sheet() {
       <div className="sheet__scrim" onClick={() => setSheet(false)} />
       <div className="sheet__panel" role="dialog" aria-label="Index">
         <div className="sheet__head">
-          <span>Index</span>
+          <span>Addr</span>
           <button type="button" className="sheet__close" onClick={() => setSheet(false)}>Close</button>
         </div>
         <div className="sheet__scroll" data-scroll>

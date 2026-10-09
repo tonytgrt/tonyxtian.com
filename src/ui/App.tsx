@@ -20,6 +20,7 @@ function Status() {
 
 export function App() {
   const landing = useStore((state) => state.landing);
+  const webgl = useStore((state) => state.webgl);
   const isOpen = useStore((state) => state.open);
   return (
     <>
@@ -27,8 +28,9 @@ export function App() {
         <TopBar />
         <nav className="index" aria-label="Index">
           <p className="index__head">
-            <span>Index</span>
-            <span>{entries.length} stops</span>
+            <span>Addr</span>
+            {/* Without WebGL there is no intro to count. */}
+            <span>{entries.length - (webgl ? 0 : 1)} locations</span>
           </p>
           <div className="index__scroll" data-scroll>
             <IndexList />

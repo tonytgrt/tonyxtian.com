@@ -134,6 +134,11 @@ kbd {
   scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
 }
 
+/* Hex addresses keep their lowercase x, even in uppercase labels. */
+.addr {
+  text-transform: none;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -387,7 +392,7 @@ kbd {
 
 .events__row {
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr) auto;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
   align-items: baseline;
   gap: 10px;
   width: 100%;
@@ -445,11 +450,9 @@ kbd {
   transition: opacity 0.3s;
 }
 
-/* Behind an open case study the stage only dims, and a click on it closes
-   the case study. */
+/* An open case study covers the stage, which fades away behind it. */
 .app[data-open='true'] .stage {
-  opacity: 0.25;
-  cursor: pointer;
+  opacity: 0;
 }
 
 .app[data-open='true'] .stage__inner {
@@ -799,6 +802,57 @@ kbd {
   font-size: 13px;
 }
 
+/* About: the name and what to do next, with the portrait framed beside them
+   the way the work's pictures are. */
+.plate--about {
+  max-width: 1120px;
+}
+
+.plate--about .plate__title {
+  font-size: clamp(36px, 4vw, 60px);
+}
+
+/* The text column is only as wide as its text, so the portrait sits beside it
+   rather than off at the far edge of the stage. */
+.about {
+  display: grid;
+  grid-template-columns: minmax(0, 560px) auto;
+  grid-template-areas:
+    'head portrait'
+    'body portrait';
+  justify-content: start;
+  column-gap: clamp(32px, 4vw, 64px);
+}
+
+.about__head {
+  grid-area: head;
+  align-self: end;
+}
+
+.about__body {
+  grid-area: body;
+}
+
+.portrait {
+  grid-area: portrait;
+  align-self: center;
+  width: clamp(240px, 26vw, 440px);
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: rgba(2, 8, 14, 0.7);
+  box-shadow: 0 30px 70px -24px rgba(0, 0, 0, 0.7);
+}
+
+.portrait__media {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: var(--ar);
+  object-fit: cover;
+}
+
 /* Contact is the night finale: the camera looks up to the horizon as night
    falls. The card follows the camera itself through --finale: it comes up into
    the sky as the sky comes into view, and sinks away as the camera looks back
@@ -975,15 +1029,16 @@ kbd {
 
 /* ---- case study ---------------------------------------------------------- */
 
+/* A case study fills everything to the right of the index, between the bars. */
 .case {
   position: fixed;
   z-index: 3;
   top: calc(var(--top) + var(--gutter));
   right: var(--gutter);
   bottom: calc(var(--bottom) + var(--gutter));
+  left: calc(var(--index-w) + var(--gutter));
   display: flex;
   flex-direction: column;
-  width: min(760px, 58vw);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   background: var(--glass-strong);
@@ -1041,7 +1096,7 @@ kbd {
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 30px 40px 48px;
+  padding: 36px clamp(24px, 4vw, 64px) 56px;
   touch-action: pan-y;
 }
 
@@ -1049,8 +1104,19 @@ kbd {
   outline: none;
 }
 
+/* Centred in the wide pane. Pictures and results take the article's full
+   width; running text keeps to a readable measure. */
 .case__article {
+  max-width: 980px;
+  margin: 0 auto;
   animation: enter-down 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.case__tagline,
+.case__body p,
+.case__body ul,
+.case__body h3 {
+  max-width: 72ch;
 }
 
 .case__kicker {
@@ -1571,6 +1637,34 @@ kbd {
 
   .plate__title {
     font-size: 38px;
+  }
+
+  /* The portrait shrinks to a small frame beside the name. */
+  .about {
+    grid-template-columns: minmax(0, 1fr) 84px;
+    grid-template-areas:
+      'head portrait'
+      'body body';
+    align-items: center;
+    column-gap: 14px;
+  }
+
+  .portrait {
+    width: 84px;
+    border-radius: 8px;
+    box-shadow: none;
+  }
+
+  .portrait__media {
+    aspect-ratio: var(--ar-phone);
+  }
+
+  .portrait .frame__bar {
+    display: none;
+  }
+
+  .plate--about .plate__title {
+    font-size: 30px;
   }
 
   .plate__tagline {

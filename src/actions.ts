@@ -82,7 +82,8 @@ function applyTheme(theme: Theme) {
 }
 
 export function setTheme(theme: Theme) {
-  setState({theme});
+  const state = getState();
+  setState({theme, skyTurns: state.skyTurns + (theme === state.theme ? 0 : 1)});
   applyTheme(theme);
   try {
     localStorage.setItem(THEME_KEY, theme);
@@ -175,7 +176,15 @@ export function boot(created: Engine | null) {
   }
 
   const theme = storedTheme();
-  setState({index, onStage: index === INTRO ? FIRST_STOP : index, open: deep, landing, webgl: engine !== null, theme});
+  setState({
+    index,
+    onStage: index === INTRO ? FIRST_STOP : index,
+    open: deep,
+    landing,
+    webgl: engine !== null,
+    theme,
+    skyTurns: theme === 'light' ? 1 : 0,
+  });
   // Before the engine's first frame, which takes its targets as they are: a
   // page opened in the light theme starts in the day rather than turning to it.
   applyTheme(theme);

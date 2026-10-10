@@ -20,6 +20,8 @@ export interface State {
   stats: EngineStats | null;
   webgl: boolean;           // the engine is drawing, so there is a descent and an intro
   theme: Theme;
+  skyTurns: number;         // half turns of the switch's wheel: one per switch, always
+                            // clockwise, as the engine's wheel of sky turns
 }
 
 let state: State = {
@@ -33,6 +35,7 @@ let state: State = {
   stats: null,
   webgl: false,
   theme: 'dark',
+  skyTurns: 0,
 };
 
 const listeners = new Set<() => void>();

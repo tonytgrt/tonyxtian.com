@@ -23,6 +23,7 @@ export interface BackgroundView {
   night: number;        // u_Night
   finale: number;       // u_Finale
   day: number;          // u_Day
+  skyTurn: number;      // u_SkyTurn
 }
 
 // The shape parameters the fireball's vertex shader reads. `params` in engine.ts
@@ -99,6 +100,7 @@ class ShaderProgram {
   unifNight: WebGLUniformLocation | null;
   unifFinale: WebGLUniformLocation | null;
   unifDay: WebGLUniformLocation | null;
+  unifSkyTurn: WebGLUniformLocation | null;
 
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
@@ -151,6 +153,7 @@ class ShaderProgram {
     this.unifNight         = gl.getUniformLocation(this.prog, "u_Night");
     this.unifFinale        = gl.getUniformLocation(this.prog, "u_Finale");
     this.unifDay           = gl.getUniformLocation(this.prog, "u_Day");
+    this.unifSkyTurn       = gl.getUniformLocation(this.prog, "u_SkyTurn");
   }
 
   use() {
@@ -310,6 +313,9 @@ class ShaderProgram {
     }
     if (this.unifDay !== null) {
       gl.uniform1f(this.unifDay, v.day);
+    }
+    if (this.unifSkyTurn !== null) {
+      gl.uniform1f(this.unifSkyTurn, v.skyTurn);
     }
   }
 

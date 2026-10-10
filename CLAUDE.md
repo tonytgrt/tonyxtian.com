@@ -140,6 +140,8 @@ Draw content from the resumes in `/home/ubuntu/TonyTianResume`. `resume_cg.tex` 
   - **Phones.** They keep their own glass cards instead.
 - **Sea and sky.** The engine's `targets.day` (0 night, 1 day) eases over 1.8 s (`DAY_SECONDS`), or at once with reduced motion, into `u_Day`.
   - **The wheel.** In the shader the sun and moon ride opposite ends of one wheel of sky turning about the view's forward axis (`wheel`). Night has the moon at `MOON_DIR`. Day turns it half round clockwise, which sets the moon, brings the sun up on the left, over the top, and down into the moon's place.
+    - It only ever turns clockwise: back to night is the second half of the circle. The engine counts the wheel in half turns (night even, day odd) and passes its angle as `u_SkyTurn`. `u_Day` is how far toward day the sea and sky are: up over a turn to day, down over a turn to night.
+    - The switch's icon counts the same half turns (`skyTurns` in the store).
   - **The switch icon.** It is the same wheel in miniature, turning with the same timing.
   - **By day.** The sea is brighter (`DAY_EXPOSURE`, `DAY_SCATTER`, `DAY_SHEEN`), and Contact shows the day sky with clouds and the sun's disc (`sunFace`) in place of the night.
   - **Dark theme.** Every day term is zero at `u_Day = 0`, so the dark theme renders exactly as it did before there was a light one.

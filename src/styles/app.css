@@ -1327,10 +1327,6 @@ kbd {
   transition: transform 1.8s cubic-bezier(0.65, 0, 0.35, 1);
 }
 
-[data-theme='light'] .daynight__wheel {
-  transform: rotate(180deg);
-}
-
 .daynight__moon {
   fill: #e9e2cf;
 }

@@ -1,8 +1,8 @@
 // The theme switch: night (the dark theme) or day (the light). Its icon is a
 // little wheel of sky with the moon and the sun on opposite ends, clipped at
-// its horizon. Switching turns it half round, clockwise to day, as the engine
-// turns the real one over the sea: the moon sets on the right as the sun comes
-// up on the left.
+// its horizon. Every switch turns it on half round, always clockwise, as the
+// engine turns the real one over the sea: to day the moon sets on the right as
+// the sun comes up on the left, and back to night the other way about.
 import {useId} from 'react';
 import {toggleTheme} from '../actions';
 import {useStore} from '../store';
@@ -11,6 +11,7 @@ const RAYS = Array.from({length: 8}, (_, i) => (i * Math.PI) / 4);
 
 export function DayNight({label = true}: {label?: boolean}) {
   const day = useStore((state) => state.theme) === 'light';
+  const turns = useStore((state) => state.skyTurns);
   const id = useId();
   return (
     <button
@@ -33,7 +34,7 @@ export function DayNight({label = true}: {label?: boolean}) {
           </mask>
         </defs>
         <g clipPath={`url(#${id}-sky)`}>
-          <g className="daynight__wheel">
+          <g className="daynight__wheel" style={{transform: `rotate(${turns * 180}deg)`}}>
             <circle className="daynight__moon" cx="16" cy="6" r="4" mask={`url(#${id}-crescent)`} />
             <g className="daynight__sun">
               <circle cx="16" cy="24" r="3" />

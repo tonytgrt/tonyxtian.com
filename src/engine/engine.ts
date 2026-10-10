@@ -72,10 +72,11 @@ const NIGHT_HOLD = 0.45;
 const FINALE_CLEAR = 0.1;
 
 // One switch between the dark theme's night and the light theme's day, in
-// seconds: the half turn of the wheel of sky that sets the moon and brings up
+// seconds: a half turn of the wheel of sky that sets the moon and brings up
 // the sun, or the other way round (see wheel in background-frag.glsl). Eased
 // in and out, as the switch's own little wheel in the bottom bar is, so the
-// two turn together.
+// two turn together. The wheel only ever turns clockwise, so it is counted in
+// half turns: night on the even ones, day on the odd.
 const DAY_SECONDS = 1.8;
 
 function easeInOutCubic(x: number) {
@@ -255,12 +256,15 @@ export function createEngine(canvas: HTMLCanvasElement): Engine | null {
 
   const view: BackgroundView = {
     pan: 0, zoom: 1, cloudZoom: 1, spin: 0, cloudDrift: 0, inside: 0, scroll: 0, night: 0, finale: 0, day: 0,
+    skyTurn: 0,
   };
   let progress = 0;
   let finale = 0;
   let finaleSpeed = 0;
   let night = 0;
-  let day = 0;
+  let turn = 0;        // the wheel of sky, in half turns
+  let turnTarget = 0;
+  let wantDay = false;
   let travel = 0;
   let travelSpeed = 0;
   let first = true;
@@ -308,7 +312,8 @@ export function createEngine(canvas: HTMLCanvasElement): Engine | null {
       progress = descentTarget;
       finale = finaleTarget;
       night = finaleTarget;
-      day = dayTarget;
+      wantDay = dayTarget >= 0.5;
+      turn = turnTarget = wantDay ? 1 : 0;
       travel = targets.travel;
       first = false;
     } else {
@@ -329,8 +334,23 @@ export function createEngine(canvas: HTMLCanvasElement): Engine | null {
 
       [travel, travelSpeed] = spring(travel, travelSpeed, targets.travel, TRAVEL_STIFFNESS, dt);
 
-      const dayStep = dt / daySeconds;
-      day = dayTarget > day ? Math.min(dayTarget, day + dayStep) : Math.max(dayTarget, day - dayStep);
+      // A switch sends the wheel on to the next half turn of the right kind
+      // ahead of it, so it never turns back: switching again mid-turn carries
+      // it on round.
+      if ((dayTarget >= 0.5) !== wantDay) {
+        wantDay = dayTarget >= 0.5;
+        let next = Math.ceil(turn);
+        if ((next % 2 === 1) !== wantDay) {
+          next += 1;
+        }
+        turnTarget = next;
+      }
+      turn = Math.min(turnTarget, turn + dt / daySeconds);
+      // The wheel looks the same every full turn, so the count is kept small.
+      if (turn === turnTarget && turn >= 2) {
+        turn -= 2 * Math.floor(turn / 2);
+        turnTarget = turn;
+      }
     }
     // Brought back into range: a spring turned around mid-flight can overshoot.
     const look = Math.min(1, Math.max(0, finale));
@@ -370,7 +390,13 @@ export function createEngine(canvas: HTMLCanvasElement): Engine | null {
     view.scroll = travel;
     view.night = ease(night);
     view.finale = look;
-    view.day = easeInOutCubic(day);
+    // Each half turn eases in and out. How far toward day the sea and sky
+    // have come goes up over a turn to day and back down over a turn to night.
+    const whole = Math.floor(turn);
+    const eased = whole + easeInOutCubic(turn - whole);
+    const phase = eased % 2;
+    view.day = phase <= 1 ? phase : 2 - phase;
+    view.skyTurn = -Math.PI * eased;
     view.spin += dt * SPIN_RATE / descent.zoom;
     view.cloudDrift += dt * CLOUD_DRIFT_RATE / descent.cloudZoom;
 

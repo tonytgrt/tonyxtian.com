@@ -27,6 +27,7 @@ uniform float u_Night;       // 0 to 1: night falling over the last stop, Contac
 uniform float u_Finale;      // 0 to 1: then the camera looking up from the sea to the horizon.
 uniform float u_Day;         // 0 to 1: from the dark theme's night to the light theme's day.
                              // In between, the wheel of sky is turning (see wheel).
+uniform float u_SkyTurn;     // How far the wheel of sky has turned, in radians: -PI per switch.
 
 in vec2 fs_Pos;
 
@@ -430,11 +431,12 @@ const float MOON_REFLECT = 5.0;
 // horizon. By night the moon hangs at MOON_DIR and the sun is down below the
 // opposite horizon. Switching to day turns the wheel half round, clockwise:
 // the moon sets on the right as the sun comes up on the left, climbs out over
-// the top of the view and comes down into the moon's place. Switching back
-// turns it home again.
+// the top of the view and comes down into the moon's place. It only ever
+// turns that way: back to night is the second half of the turn, the sun
+// setting on the right as the moon comes up on the left and over the top.
 vec3 wheel(vec3 dir)
 {
-    float a = -PI * u_Day;
+    float a = u_SkyTurn;
     float c = cos(a), s = sin(a);
     return vec3(dir.x * c - dir.y * s, dir.x * s + dir.y * c, dir.z);
 }
@@ -454,8 +456,8 @@ vec3 sunDir()
 }
 
 // How much of the sky is night's: the nightfall over Contact, lifted by day.
-// It goes as the moon sets and the sun comes up, early in the wheel's turn,
-// and comes back as late in its turn home.
+// It goes as the moon sets and the sun comes up, early in the turn to day, and
+// comes back as late in the turn back to night, as the moon comes up again.
 float nightAmount()
 {
     return u_Night * (1.0 - smoothstep(0.04, 0.35, u_Day));

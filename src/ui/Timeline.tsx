@@ -8,7 +8,7 @@ import {select} from '../actions';
 import {useStore} from '../store';
 
 const FIRST = month('2024-09');
-const LAST = month('2026-09');
+const LAST = month('2026-12');
 const MONTHS = LAST - FIRST + 1;
 
 function month(date: string): number {

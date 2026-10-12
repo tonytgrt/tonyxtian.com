@@ -118,7 +118,9 @@ Draw content from the resumes in `/home/ubuntu/TonyTianResume`. `resume_cg.tex` 
    - `stack`.
    - `counters`: measured results, two or three. Use real numbers from the resume, never adjectives.
    - `links`: the first one becomes the stage's second button.
-   - `blocks`: the case study, with `**bold**` allowed.
+   - `blocks`: the case study, written from the project's README and docs, at about their level of detail. The kinds are in `src/content/types.ts`: `p`, `h`, `list` (`ordered` for numbers), `media`, `gallery` (pictures side by side, each labelled, so a comparison reads the same stacked on a phone), `table` and `code`. Text can mark `**bold**` and `` `code` `` spans.
+     - Tables carry the README's measured results. Columns whose cells all start with a number are set right-aligned in the mono face (`figureColumns` in `src/content/tables.ts`, shared with the prerender).
+     - Credit teammates' parts by name, from the project's own record of who built what. Without one, describe the work as the team's.
 3. Put the image in `src/media/`, resized to about 1600px wide (the originals are often 4–15 MB), and give its real `width`/`height` in `hero`.
    - For a clip, add a `video` (WebM) alongside a poster JPEG.
    - Work without a picture is set as type alone, like Apple.

@@ -2,6 +2,7 @@
 import {Fragment, type ReactNode} from 'react';
 import {entries} from '../content/entries';
 import {passes} from '../content/site';
+import {figureColumns} from '../content/tables';
 import type {Block, Entry, Media as MediaInfo, Pass} from '../content/types';
 import {mediaUrl} from '../media';
 
@@ -48,17 +49,28 @@ export function address(index: number): string {
   return `0x${value.toString(16).toUpperCase().padStart(2, '0')}`;
 }
 
-// Text with **bold** spans.
+// Text with **bold** and `code` spans.
 export function Rich({text}: {text: string}) {
-  const parts = text.split('**');
   return (
     <>
-      {parts.map((part, i) => (i % 2 === 1 ? <strong key={i}>{part}</strong> : <Fragment key={i}>{part}</Fragment>))}
+      {text.split('**').map((part, i) => (i % 2 === 1
+        ? <strong key={i}><Code text={part} /></strong>
+        : <Code key={i} text={part} />))}
     </>
   );
 }
 
-export function Media({media, className}: {media: MediaInfo; className?: string}) {
+function Code({text}: {text: string}) {
+  return (
+    <>
+      {text.split('`').map((part, i) => (i % 2 === 1 ? <code key={i}>{part}</code> : <Fragment key={i}>{part}</Fragment>))}
+    </>
+  );
+}
+
+// `lazy` is for pictures further down a case study, which can wait until
+// they're scrolled near.
+export function Media({media, className, lazy}: {media: MediaInfo; className?: string; lazy?: boolean}) {
   const poster = mediaUrl(media.src);
   if (media.video) {
     return (
@@ -79,7 +91,44 @@ export function Media({media, className}: {media: MediaInfo; className?: string}
     );
   }
   return (
-    <img className={className} src={poster} alt={media.alt} width={media.width} height={media.height} decoding="async" />
+    <img
+      className={className}
+      src={poster}
+      alt={media.alt}
+      width={media.width}
+      height={media.height}
+      loading={lazy ? 'lazy' : undefined}
+      decoding="async"
+    />
+  );
+}
+
+function Table({head, rows, caption}: {head: string[]; rows: string[][]; caption?: string}) {
+  const figures = figureColumns(head, rows);
+  const align = (column: number) => (figures[column] ? 'num' : undefined);
+  return (
+    <figure className="case__table">
+      {/* Wide tables scroll sideways on a phone; it takes focus so the keys can too. */}
+      <div className="case__table-scroll" tabIndex={0}>
+        <table>
+          <thead>
+            <tr>
+              {head.map((cell, j) => <th key={j} scope="col" className={align(j)}><Rich text={cell} /></th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, r) => (
+              <tr key={r}>
+                {row.map((cell, j) => (j === 0
+                  ? <th key={j} scope="row" className={align(j)}><Rich text={cell} /></th>
+                  : <td key={j} className={align(j)}><Rich text={cell} /></td>))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {caption && <figcaption><Rich text={caption} /></figcaption>}
+    </figure>
   );
 }
 
@@ -92,19 +141,35 @@ export function Blocks({blocks}: {blocks: Block[]}) {
             return <p key={i}><Rich text={block.text} /></p>;
           case 'h':
             return <h3 key={i}>{block.text}</h3>;
-          case 'list':
-            return (
-              <ul key={i}>
-                {block.items.map((item, j) => <li key={j}><Rich text={item} /></li>)}
-              </ul>
-            );
+          case 'list': {
+            const items = block.items.map((item, j) => <li key={j}><Rich text={item} /></li>);
+            return block.ordered ? <ol key={i}>{items}</ol> : <ul key={i}>{items}</ul>;
+          }
           case 'media':
             return (
               <figure key={i} className="case__figure">
-                <Media media={block.media} />
-                {block.caption && <figcaption>{block.caption}</figcaption>}
+                <Media media={block.media} lazy />
+                {block.caption && <figcaption><Rich text={block.caption} /></figcaption>}
               </figure>
             );
+          case 'gallery':
+            return (
+              <figure key={i} className="case__gallery">
+                <div className="case__gallery-grid">
+                  {block.items.map((item) => (
+                    <figure key={item.media.src} className="case__figure">
+                      <Media media={item.media} lazy />
+                      <figcaption>{item.label}</figcaption>
+                    </figure>
+                  ))}
+                </div>
+                {block.caption && <figcaption><Rich text={block.caption} /></figcaption>}
+              </figure>
+            );
+          case 'table':
+            return <Table key={i} head={block.head} rows={block.rows} caption={block.caption} />;
+          case 'code':
+            return <pre key={i} className="case__code"><code>{block.text}</code></pre>;
         }
       })}
     </>

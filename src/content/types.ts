@@ -31,12 +31,21 @@ export interface Media {
   video?: string;
 }
 
-// The case study, block by block. Text may mark **bold** spans.
+// The case study, block by block. Text, list items, table cells and captions
+// may mark **bold** and `code` spans.
+// - A table's first column names its rows. A column whose every cell starts
+//   with a number (or is a dash) is set as figures, right-aligned
+//   (figureColumns in tables.ts).
+// - A gallery sets its pictures side by side (stacked on a phone), each with a
+//   label of its own, so a comparison reads the same either way.
 export type Block =
   | {kind: 'p'; text: string}
   | {kind: 'h'; text: string}
-  | {kind: 'list'; items: string[]}
-  | {kind: 'media'; media: Media; caption?: string};
+  | {kind: 'list'; items: string[]; ordered?: boolean}
+  | {kind: 'media'; media: Media; caption?: string}
+  | {kind: 'gallery'; items: {media: Media; label: string}[]; caption?: string}
+  | {kind: 'table'; head: string[]; rows: string[][]; caption?: string}
+  | {kind: 'code'; text: string};
 
 export interface WorkEntry {
   kind: 'work';

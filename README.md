@@ -122,7 +122,8 @@ In space, a comet circles the cursor ([`Comet.ts`](src/engine/Comet.ts)):
 
 [Vite](https://vite.dev), [React 19](https://react.dev) and TypeScript in
 strict mode, plain CSS, and [gl-matrix](https://glmatrix.net). The whole site is
-about 116 KB of gzipped JavaScript, React included, and 6 KB of CSS.
+about 137 KB of gzipped JavaScript, React and every case study included, and
+7 KB of CSS.
 
 ### Engine and app
 
@@ -254,6 +255,7 @@ section, the links and Contact are in `site.ts`. Every project is a
 - **Pictures.** Put them in `src/media/`, about 1600 px wide, and give their real size in `hero`. A clip is a WebM in `video`, with the image as its poster. A project without a picture is set as type alone.
 - **Not shipped.** `draft: true` keeps an entry out of the site; drafts' images go in `src/media/drafts/`. Full-size sources go in `src/media/originals/`.
 - **Counters.** They are measured results, two or three to a project.
+- **The case study.** `blocks` is a list of paragraphs (`p`), headings (`h`), lists (`list`, numbered with `ordered: true`), pictures (`media`, with a caption), side-by-side pictures (`gallery`, each with its own label, stacked on a phone), tables (`table`) and code (`code`). Text can mark `**bold**` and `` `code` `` spans. A table column whose every cell starts with a number is set as figures, right-aligned. Each project's case study follows its README: what it does, how, and its measured results.
 
 ---
 

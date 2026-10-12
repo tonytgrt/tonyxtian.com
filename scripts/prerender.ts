@@ -6,6 +6,7 @@ import {existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync}
 import {dirname, extname, join} from 'node:path';
 import {entries, shownWork} from '../src/content/entries';
 import {about, site} from '../src/content/site';
+import {figureColumns} from '../src/content/tables';
 import type {Block, Media, WorkEntry} from '../src/content/types';
 
 const DIST = 'dist';
@@ -46,8 +47,26 @@ function escape(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// **bold** and `code` spans, as the app's Rich draws them.
 function rich(text: string): string {
-  return escape(text).split('**').map((part, i) => (i % 2 === 1 ? `<strong>${part}</strong>` : part)).join('');
+  const code = (part: string) => part.split('`').map((span, i) => (i % 2 === 1 ? `<code>${span}</code>` : span)).join('');
+  return escape(text).split('**').map((part, i) => (i % 2 === 1 ? `<strong>${code(part)}</strong>` : code(part))).join('');
+}
+
+function caption(text: string | undefined): string {
+  return text ? `<figcaption>${rich(text)}</figcaption>` : '';
+}
+
+function table(head: string[], rows: string[][]): string {
+  const figures = figureColumns(head, rows);
+  const cell = (tag: string, text: string, column: number, scope?: string) =>
+    `<${tag}${scope ? ` scope="${scope}"` : ''}${figures[column] ? ' class="num"' : ''}>${rich(text)}</${tag}>`;
+  return [
+    '<table>',
+    `<thead><tr>${head.map((text, j) => cell('th', text, j, 'col')).join('')}</tr></thead>`,
+    `<tbody>${rows.map((row) => `<tr>${row.map((text, j) => (j === 0 ? cell('th', text, j, 'row') : cell('td', text, j))).join('')}</tr>`).join('')}</tbody>`,
+    '</table>',
+  ].join('');
 }
 
 function blocks(list: Block[]): string {
@@ -57,10 +76,18 @@ function blocks(list: Block[]): string {
         return `<p>${rich(block.text)}</p>`;
       case 'h':
         return `<h3>${escape(block.text)}</h3>`;
-      case 'list':
-        return `<ul>${block.items.map((item) => `<li>${rich(item)}</li>`).join('')}</ul>`;
+      case 'list': {
+        const tag = block.ordered ? 'ol' : 'ul';
+        return `<${tag}>${block.items.map((item) => `<li>${rich(item)}</li>`).join('')}</${tag}>`;
+      }
       case 'media':
-        return `<figure>${image(block.media)}${block.caption ? `<figcaption>${escape(block.caption)}</figcaption>` : ''}</figure>`;
+        return `<figure>${image(block.media)}${caption(block.caption)}</figure>`;
+      case 'gallery':
+        return `<figure>${block.items.map((item) => `<figure>${image(item.media)}<figcaption>${escape(item.label)}</figcaption></figure>`).join('')}${caption(block.caption)}</figure>`;
+      case 'table':
+        return `<figure>${table(block.head, block.rows)}${caption(block.caption)}</figure>`;
+      case 'code':
+        return `<pre><code>${escape(block.text)}</code></pre>`;
     }
   }).join('\n');
 }
@@ -155,6 +182,8 @@ for (const entry of shownWork) {
   for (const block of entry.blocks) {
     if (block.kind === 'media') {
       checkMedia(block.media);
+    } else if (block.kind === 'gallery') {
+      block.items.forEach((item) => checkMedia(item.media));
     }
   }
 }

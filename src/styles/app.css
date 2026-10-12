@@ -490,6 +490,7 @@ kbd {
 .bottombar,
 .case__kicker,
 .case__section,
+.case__table thead th,
 .sheet__head {
   font-family: var(--mono);
   letter-spacing: 0.12em;
@@ -1642,6 +1643,151 @@ kbd {
   font-weight: 600;
 }
 
+.case__body ol {
+  display: grid;
+  gap: 10px;
+  max-width: 72ch;
+  margin: 0 0 14px;
+  padding-left: 22px;
+}
+
+.case__body ol li::marker {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+/* Names from the code, and short formulas. */
+.case__body code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--tint);
+  color: var(--fg);
+  font-family: var(--mono);
+  font-size: 0.84em;
+  overflow-wrap: anywhere;
+}
+
+.case__body .case__code {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--tint);
+  color: var(--fg);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.55;
+  touch-action: pan-x pan-y;
+}
+
+.case__body .case__code code {
+  padding: 0;
+  background: none;
+  font-size: inherit;
+  overflow-wrap: normal;
+}
+
+/* Results are as wide as they need to be, up to the article's full width, and
+   scroll sideways past that. Figures sit right, in the mono face, so their
+   digits line up down a column. */
+.case__table {
+  margin: 4px 0 22px;
+}
+
+.case__table-scroll {
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--tint);
+  touch-action: pan-x pan-y;
+}
+
+.case__table-scroll:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.case__table table {
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.case__table th,
+.case__table td {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.case__table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.case__table thead th {
+  color: var(--dim);
+  font-size: 10.5px;
+  font-weight: 400;
+  vertical-align: bottom;
+}
+
+.case__table tbody th {
+  color: var(--fg);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.case__table .num {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.case__table thead .num {
+  font-size: 10.5px;
+}
+
+.case__table strong {
+  color: var(--accent);
+}
+
+.case__table figcaption,
+.case__gallery > figcaption {
+  margin-top: 8px;
+  color: var(--dim);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.case__gallery {
+  margin: 24px 0 0;
+}
+
+.case__gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.case__gallery-grid .case__figure {
+  margin: 0;
+}
+
+/* After a picture, the text needs room of its own. */
+.case__body figure + p,
+.case__body figure + ul,
+.case__body figure + ol,
+.case__body figure + pre {
+  margin-top: 22px;
+}
+
 .case__section {
   margin: 30px 0 12px;
   color: var(--dim);
@@ -2133,6 +2279,11 @@ kbd {
     padding: 22px 18px 44px;
   }
 
+  .case__table th,
+  .case__table td {
+    padding: 8px 10px;
+  }
+
   .case__step span:not([aria-hidden]) {
     max-width: 26vw;
     overflow: hidden;
@@ -2173,6 +2324,32 @@ kbd {
   max-width: 100%;
   height: auto;
   border-radius: 8px;
+}
+
+.fallback figure {
+  margin: 20px 0;
+  overflow-x: auto;
+}
+
+.fallback table {
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.fallback th,
+.fallback td {
+  padding: 4px 12px 4px 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.fallback .num {
+  text-align: right;
+}
+
+.fallback pre {
+  overflow-x: auto;
+  font-size: 13px;
 }
 
 html.js .fallback {

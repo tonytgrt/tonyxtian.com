@@ -1,4 +1,4 @@
-// The landing that plays as the visitor scrolls on a first visit: the camera
+// The landing that plays as the visitor scrolls on from the intro: the camera
 // pans down to look straight at the planet, falls toward it, drops through the
 // clouds as they thin away, and comes down over the ocean the site sits on,
 // still looking down at it.

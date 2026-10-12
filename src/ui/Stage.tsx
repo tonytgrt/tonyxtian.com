@@ -85,8 +85,13 @@ function WorkStage({entry, index}: {entry: WorkEntry; index: number}) {
           ))}
         </dl>
         <div className="actions">
-          <button type="button" className="btn btn--primary" onClick={() => open(index)}>
-            Open case study <span aria-hidden="true">→</span>
+          <button
+            type="button"
+            className="btn btn--primary"
+            aria-label={`More about ${entry.title}`}
+            onClick={() => open(index)}
+          >
+            More <span aria-hidden="true">→</span>
           </button>
           {link && (
             <ExternalLink className="btn" href={link.href}>

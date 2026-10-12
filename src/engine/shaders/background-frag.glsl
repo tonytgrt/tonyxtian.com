@@ -407,10 +407,21 @@ vec3 daySky(vec3 dir, vec3 sun, bool direct)
 }
 
 // The moon the page ends under. It rises where the low sun was, so the light
-// on the water stays on the same side it has been on all along, drawn in a
-// little so the whole disc fits on a widescreen.
-const vec3  MOON_DIR        = normalize(vec3(1.0, 0.2, 1.0));
+// on the water stays on the same side it has been on all along.
 const float MOON_RADIUS     = 0.04;  // radians: far larger than the real one, to be seen
+
+// Where the moon hangs at Contact, and the sun by day: low on the right, as
+// far out as the screen allows. On a widescreen that is near the right-hand
+// edge, drawn in a little so the whole disc fits, with its path of light down
+// that side, clear of the page's text. A narrow screen shows far less to
+// either side, so there it comes in toward the middle: on a phone, a little
+// right of centre, where the whole of the wheel's turn stays in view.
+vec3 moonHome()
+{
+    float aspect = u_Dimensions.x / max(1.0, u_Dimensions.y);
+    float across = min(1.5, aspect * mix(0.55, 0.84, smoothstep(0.7, 1.5, aspect)));
+    return normalize(vec3(across / 1.5, 0.2, 1.0));
+}
 const float MOON_BRIGHTNESS = 2.0;
 const vec3  MOON_COLOR      = vec3(1.0, 0.96, 0.88);
 
@@ -428,7 +439,7 @@ const float MOON_REFLECT = 5.0;
 
 // The sun and the moon ride opposite ends of one wheel of sky, turning about
 // the view's forward axis, which at Contact points at the middle of the
-// horizon. By night the moon hangs at MOON_DIR and the sun is down below the
+// horizon. By night the moon hangs at moonHome() and the sun is down below the
 // opposite horizon. Switching to day turns the wheel half round, clockwise:
 // the moon sets on the right as the sun comes up on the left, climbs out over
 // the top of the view and comes down into the moon's place. It only ever
@@ -443,7 +454,7 @@ vec3 wheel(vec3 dir)
 
 vec3 moonDir()
 {
-    return wheel(MOON_DIR);
+    return wheel(moonHome());
 }
 
 // Behind the content the sun is the low one off to the right, in either
@@ -451,7 +462,8 @@ vec3 moonDir()
 // over once a switch has begun, so the dark theme's sea is lit just as before.
 vec3 sunDir()
 {
-    vec3 wheelSun = wheel(vec3(-MOON_DIR.xy, MOON_DIR.z));
+    vec3 home     = moonHome();
+    vec3 wheelSun = wheel(vec3(-home.xy, home.z));
     return normalize(mix(OCEAN_SUN, wheelSun, u_Finale * smoothstep(0.0, 0.05, u_Day)));
 }
 

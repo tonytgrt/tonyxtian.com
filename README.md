@@ -27,9 +27,9 @@ timeline of when each was made.
 
 ## The site
 
-**A first visit opens in space.** Scrolling plays a descent from orbit, through
-the clouds, down to the sea the site sits on. Returning visitors start on the
-sea, and so does anyone who follows a link to a project.
+**The home page opens in space.** Scrolling plays a descent from orbit, through
+the clouds, down to the sea the site sits on. A link straight to a project
+starts on the sea.
 
 **The layout.**
 - **Top bar.** Shows the renderer's own numbers, measured live: frame time, pixel ratio, and waves per pixel.
@@ -56,11 +56,11 @@ sun is there instead.
 |---|---|---|
 | Next / previous project | Scroll, <kbd>↓</kbd> <kbd>↑</kbd>, <kbd>j</kbd> <kbd>k</kbd>, <kbd>Space</kbd> | Swipe up / down or left / right, or the ↑ ↓ buttons |
 | Jump anywhere | A row in ADDR, or a bar in the timeline; <kbd>Home</kbd> <kbd>End</kbd> | **Addr** opens the list as a sheet |
-| Open a case study | <kbd>Enter</kbd>, **Open case study**, or the selected row again | **Open case study** |
+| Open a case study | <kbd>Enter</kbd>, **More**, or the selected row again | **More** |
 | Previous / next case study | <kbd>←</kbd> <kbd>→</kbd> | The arrows at the top of the case study |
 | Close it | <kbd>Esc</kbd>, ✕, or the browser's back button | ✕ or back |
 | Back to the intro | **Intro**, scrolling up from About, or the name in the top bar | Swipe down on About |
-| Play the descent | Scroll or <kbd>↓</kbd>; **Skip intro**, <kbd>Enter</kbd> or <kbd>Esc</kbd> to fast-forward | Drag up, or **Skip intro** |
+| Play the descent | Scroll or <kbd>↓</kbd>; <kbd>Enter</kbd> or <kbd>Esc</kbd> to fast-forward | Drag up |
 | Day or night | The switch in the bottom bar | The same |
 
 ---

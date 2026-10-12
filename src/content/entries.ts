@@ -206,12 +206,12 @@ const work: WorkEntry[] = [
       {kind: 'h', text: 'From orbit to the sea'},
       {
         kind: 'p',
-        text: "A first visit opens in space over a planet, with a comet circling the cursor on a precessing **Kepler orbit**, its tail stretching with speed and bending with its path. Scrolling plays the descent: the camera pans onto the planet and falls toward it. The clouds sit nearer the camera than the ground and magnify faster, a **parallax** that makes the zoom read as a fall, and they thin away as the camera drops through them. Noise octaves are added **fractionally** as the zoom doubles, so the coastlines keep their detail without popping, and the sea rises during the fall so the camera always comes down over open water.",
+        text: "The home page opens in space over a planet, with a comet circling the cursor on a precessing **Kepler orbit**, its tail stretching with speed and bending with its path. Scrolling plays the descent: the camera pans onto the planet and falls toward it. The clouds sit nearer the camera than the ground and magnify faster, a **parallax** that makes the zoom read as a fall, and they thin away as the camera drops through them. Noise octaves are added **fractionally** as the zoom doubles, so the coastlines keep their detail without popping, and the sea rises during the fall so the camera always comes down over open water.",
       },
       {
         kind: 'media',
         media: {src: 'og.jpg', width: 1200, height: 630, alt: 'The opening: the planet from orbit, under the name'},
-        caption: 'The opening, out in space, where the descent starts on a first visit.',
+        caption: 'The opening, out in space, where the descent starts.',
       },
       {kind: 'h', text: 'One pass of waves'},
       {

@@ -1771,28 +1771,7 @@ kbd {
   }
 }
 
-.intro__skip {
-  position: absolute;
-  right: 22px;
-  bottom: 22px;
-  height: 32px;
-  padding: 0 14px;
-  border: 1px solid var(--line-strong);
-  border-radius: 6px;
-  background: rgba(3, 12, 22, 0.4);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  color: var(--muted);
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  pointer-events: auto;
-}
 
-.intro__skip:hover {
-  color: var(--fg);
-}
 
 /* ---- the phone's index sheet --------------------------------------------- */
 
@@ -2160,10 +2139,6 @@ kbd {
     text-overflow: ellipsis;
   }
 
-  .intro__skip {
-    right: 16px;
-    bottom: calc(16px + env(safe-area-inset-bottom));
-  }
 }
 
 @media (max-width: 759px) and (max-height: 700px) {

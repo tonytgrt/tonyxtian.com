@@ -10,9 +10,6 @@ import {mediaUrl} from './media';
 import {indexForPath, pathFor} from './routing';
 import {getState, setState, type Theme} from './store';
 
-// Set once a visitor has landed, so the descent only plays on a first visit.
-const SEEN_KEY = 'tonyxtian.landed';
-
 // The visitor's theme, kept for next time. index.html reads it too, before
 // anything is drawn, so a light-theme visitor never sees the dark one flash.
 const THEME_KEY = 'tonyxtian.theme';
@@ -48,14 +45,6 @@ let tweenTo: number | null = null;
 
 function clamp(x: number, lo: number, hi: number) {
   return Math.min(hi, Math.max(lo, x));
-}
-
-function seen(): boolean {
-  try {
-    return localStorage.getItem(SEEN_KEY) !== null;
-  } catch {
-    return false;
-  }
 }
 
 function storedTheme(): Theme {
@@ -168,9 +157,10 @@ export function boot(created: Engine | null) {
     index = entries.findIndex((entry) => entry.id === anchor);
   }
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const landing = engine !== null && index < 0 && !seen() && !reducedMotion;
-  // A first visit starts at the intro, out in space; any other starts on the
-  // ocean, at About unless the address names somewhere else.
+  const landing = engine !== null && index < 0 && !reducedMotion;
+  // The home page starts at the intro, out in space, every time. An address
+  // that names an entry starts on the ocean there, as does anyone who asked
+  // for less motion, at About.
   if (index < 0) {
     index = landing ? INTRO : FIRST_STOP;
   }
@@ -202,8 +192,8 @@ export function boot(created: Engine | null) {
   }
 
   if (engine) {
-    // Anywhere but a first visit starts on the ocean: the first frame takes
-    // these as they are.
+    // Anywhere but the intro starts on the ocean: the first frame takes these
+    // as they are.
     engine.targets.descent = landing ? 0 : 1;
     steer(index, index);
   }
@@ -376,10 +366,5 @@ export function landed() {
   if (state.landing || state.index === INTRO) {
     const index = state.index === INTRO ? FIRST_STOP : state.index;
     setState({landing: false, index, onStage: index, arrivals: state.arrivals + 1, direction: 1});
-  }
-  try {
-    localStorage.setItem(SEEN_KEY, '1');
-  } catch {
-    // Without storage the descent simply plays again next time.
   }
 }

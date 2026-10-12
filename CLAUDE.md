@@ -74,13 +74,14 @@ npm run preview    # serve dist/ on 5175
 
 ## Landing and finale
 
-- **Descent.** It plays by itself only on a first visit: never on a deep link, never with `prefers-reduced-motion`, and not again once `localStorage['tonyxtian.landed']` is set.
+- **Descent.** The home page opens on it every time, refreshes included. It never plays on a deep link or with `prefers-reduced-motion`; those start on the sea.
+  - There's no Skip button: scrolling, a swipe or ↓ plays it, and Enter or Esc fast-forwards it (`skip()`).
   - The wheel plays it over 2.4 screens of scrolling, and the panels fade in over its last stretch (`.app[data-landing='true']` in the CSS).
   - When the engine reports landing, `input.hold()` swallows the rest of that scroll gesture.
   - The descent stays dark the whole way, with no white-out.
 - **Intro.** The first entry, `intro`, is the descent itself; there is no title card. Selecting it runs `replay()`, which lifts the camera back into space.
   - The Intro row in the index, the name in the top bar, and a step up from About (wheel, ↑ or a swipe) all select it. The rest of that scroll gesture is held, so it can't stall the rise.
-  - Landing, or Skip, arrives at About (`FIRST_STOP`), which returning visitors also start on.
+  - Landing arrives at About (`FIRST_STOP`), as does a reduced-motion visit to the home page.
   - The intro puts nothing of its own on the stage. The stage draws `onStage`, not the selection, and is hidden while `landing`.
     - Going up, the last entry fades out with the site. Coming down, the panels fade in around an empty stage, and About enters once landed.
     - An entry's entrance direction is fixed when it mounts (`Entrance` in `Stage.tsx`). Changing the `animation-name` of a mounted element restarts the animation, which flashes the content.
@@ -139,7 +140,7 @@ Draw content from the resumes in `/home/ubuntu/TonyTianResume`. `resume_cg.tex` 
   - **Fading.** The frost fades with `--frost` and `--panel`, so the layout never moves when the theme switches.
   - **Phones.** They keep their own glass cards instead.
 - **Sea and sky.** The engine's `targets.day` (0 night, 1 day) eases over 1.8 s (`DAY_SECONDS`), or at once with reduced motion, into `u_Day`.
-  - **The wheel.** In the shader the sun and moon ride opposite ends of one wheel of sky turning about the view's forward axis (`wheel`). Night has the moon at `MOON_DIR`. Day turns it half round clockwise, which sets the moon, brings the sun up on the left, over the top, and down into the moon's place.
+  - **The wheel.** In the shader the sun and moon ride opposite ends of one wheel of sky turning about the view's forward axis (`wheel`). Night has the moon at `moonHome()`: near the right-hand edge on a widescreen, coming in toward the middle on narrower screens, so a phone sees it too. Day turns it half round clockwise, which sets the moon, brings the sun up on the left, over the top, and down into the moon's place.
     - It only ever turns clockwise: back to night is the second half of the circle. The engine counts the wheel in half turns (night even, day odd) and passes its angle as `u_SkyTurn`. `u_Day` is how far toward day the sea and sky are: up over a turn to day, down over a turn to night.
     - The switch's icon counts the same half turns (`skyTurns` in the store).
   - **The switch icon.** It is the same wheel in miniature, turning with the same timing.
